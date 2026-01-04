@@ -1,0 +1,68 @@
+[package]
+name = "pepita"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.75"
+authors = ["Pragmatic AI Labs <info@paiml.com>"]
+description = "Tiny First-Principles Rust Kernel for Sovereign AI - io_uring/ublk/blk-mq interfaces"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/paiml/pepita"
+keywords = ["kernel", "ublk", "io_uring", "sovereign-ai", "no_std"]
+categories = ["no-std", "embedded", "os"]
+readme = "README.md"
+
+[lib]
+name = "pepita"
+path = "src/lib.rs"
+
+[[bin]]
+name = "pepita"
+path = "src/main.rs"
+required-features = ["std"]
+
+[features]
+default = ["std"]
+std = []
+# Kernel mode - true no_std without alloc
+kernel = []
+# Testing features
+proptest = ["dep:proptest"]
+
+[dependencies]
+# No external dependencies in kernel mode - first principles only
+# proptest is optional for property testing
+proptest = { version = "1.5", optional = true }
+
+[dev-dependencies]
+# Testing (EXTREME TDD)
+criterion = { version = "0.5", features = ["html_reports"] }
+
+[profile.release]
+opt-level = "z"      # Optimize for size (kernel)
+lto = true           # Link-time optimization
+codegen-units = 1    # Single codegen unit for better optimization
+panic = "abort"      # No unwinding in kernel
+strip = true         # Strip symbols
+
+[profile.dev]
+opt-level = 0
+debug = true
+
+[profile.test]
+opt-level = 0
+debug = true
+
+[[bench]]
+name = "struct_layouts"
+harness = false
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+# PMAT Quality Gates
+[package.metadata.pmat]
+min_coverage = 95
+min_mutation_score = 80
+max_cyclomatic_complexity = 10
+max_cognitive_complexity = 15

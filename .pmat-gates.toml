@@ -1,0 +1,44 @@
+# PMAT Quality Gates Configuration
+# Iron Lotus Framework + Certeza Methodology
+# Pepita: Tiny First-Principles Rust Kernel for Sovereign AI
+
+[quality]
+rust_project_score = 90
+repo_score = 85
+test_coverage = 95
+mutation_score = 80
+
+[gates]
+enforce_in_ci = true
+block_on_failure = true
+
+[thresholds]
+max_cyclomatic_complexity = 10
+max_cognitive_complexity = 15
+max_function_lines = 50
+
+[testing]
+require_unit_tests = true
+require_integration_tests = true
+require_doc_tests = true
+require_property_tests = true
+
+[documentation]
+require_readme = true
+require_changelog = true
+require_api_docs = true
+min_doc_coverage = 90
+
+[safety]
+# First-principles: zero external dependencies in kernel mode
+max_dependencies_kernel = 0
+max_dependencies_std = 5
+require_safety_comments = true
+deny_unsafe_without_comment = true
+
+[sovereignty]
+# Zero C/C++ dependencies
+max_c_dependencies = 0
+require_cargo_lock = true
+require_license_check = true
+allowed_licenses = ["MIT", "Apache-2.0", "BSD-3-Clause"]

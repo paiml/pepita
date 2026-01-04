@@ -1,0 +1,299 @@
+# ============================================================================
+# Pepita Jidoka Gates CI
+# ============================================================================
+# Iron Lotus Framework: Automated quality gates following Toyota Way principles
+#
+# Jidoka (自働化): "Automation with a human touch"
+# - Stop and fix problems when detected
+# - Build quality in at the source
+# - Never pass defects downstream
+#
+# Certeza Testing Methodology:
+# - Tier 1 (ON-SAVE): <3 seconds - compilation, basic unit tests
+# - Tier 2 (ON-COMMIT): 1-5 minutes - full tests, coverage, linting
+# - Tier 3 (ON-MERGE): Full validation - property tests, mutation testing
+# ============================================================================
+
+name: Jidoka Gates
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ==========================================================================
+  # Tier 1: Fast Feedback (Jidoka - Stop the Line)
+  # ==========================================================================
+  tier1-compile:
+    name: "Tier 1: Compile Check"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Check formatting (Poka-yoke)
+        run: cargo fmt --all -- --check
+
+      - name: Compile (std mode)
+        run: cargo build --features std
+
+      - name: Compile (kernel mode - no_std)
+        run: cargo build --no-default-features --features kernel
+
+  # ==========================================================================
+  # Tier 2: Unit Tests + Coverage (Kaizen - Continuous Improvement)
+  # ==========================================================================
+  tier2-test:
+    name: "Tier 2: Tests + Coverage"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: tier1-compile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+        with:
+          components: llvm-tools-preview
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Run unit tests
+        run: cargo test --all-features --no-fail-fast
+
+      - name: Generate coverage report
+        run: cargo llvm-cov --all-features --lcov --output-path lcov.info
+
+      - name: Check coverage threshold (95%)
+        run: |
+          COVERAGE=$(cargo llvm-cov --all-features --json | jq '.data[0].totals.lines.percent')
+          echo "Coverage: $COVERAGE%"
+          if (( $(echo "$COVERAGE < 95.0" | bc -l) )); then
+            echo "::error::Coverage $COVERAGE% is below 95% threshold"
+            exit 1
+          fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: lcov.info
+          fail_ci_if_error: false
+
+  # ==========================================================================
+  # Tier 2: Clippy Linting (Muda - Eliminate Waste)
+  # ==========================================================================
+  tier2-lint:
+    name: "Tier 2: Clippy Linting"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: tier1-compile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+        with:
+          components: clippy
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Run Clippy (std mode)
+        run: cargo clippy --all-features -- -D warnings -D clippy::pedantic -D clippy::nursery
+
+      - name: Run Clippy (kernel mode)
+        run: cargo clippy --no-default-features --features kernel -- -D warnings -D clippy::pedantic -D clippy::nursery
+
+  # ==========================================================================
+  # Tier 2: ABI Verification (Genchi Genbutsu - Go and See)
+  # ==========================================================================
+  tier2-abi:
+    name: "Tier 2: ABI Compatibility"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: tier1-compile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Run ABI tests
+        run: cargo test --all-features abi -- --nocapture
+
+      - name: Run layout tests
+        run: cargo test --all-features layout -- --nocapture
+
+      - name: Run size tests
+        run: cargo test --all-features size -- --nocapture
+
+  # ==========================================================================
+  # Tier 3: Property Testing (Heijunka - Level Loading)
+  # ==========================================================================
+  tier3-property:
+    name: "Tier 3: Property Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [tier2-test, tier2-lint, tier2-abi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Run property tests
+        run: cargo test --all-features proptest -- --nocapture
+        env:
+          PROPTEST_CASES: 10000
+
+  # ==========================================================================
+  # Tier 3: Mutation Testing (Ultimate Quality Gate)
+  # ==========================================================================
+  tier3-mutation:
+    name: "Tier 3: Mutation Testing"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: [tier2-test, tier2-lint, tier2-abi]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (nightly)
+        uses: dtolnay/rust-action@nightly
+
+      - name: Install cargo-mutants
+        run: cargo install cargo-mutants
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-mutants-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-mutants-
+
+      - name: Run mutation tests
+        run: |
+          cargo mutants --timeout 300 --jobs 4 -- --all-features
+          SCORE=$(cargo mutants --timeout 300 --jobs 4 -- --all-features 2>&1 | grep -oP 'score: \K[\d.]+' || echo "0")
+          echo "Mutation score: $SCORE%"
+          if (( $(echo "$SCORE < 80.0" | bc -l) )); then
+            echo "::warning::Mutation score $SCORE% is below 80% target"
+          fi
+
+  # ==========================================================================
+  # Documentation Build (Knowledge Preservation)
+  # ==========================================================================
+  docs:
+    name: "Documentation"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: tier1-compile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@stable
+
+      - name: Build documentation
+        run: cargo doc --all-features --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: target/doc
+
+  # ==========================================================================
+  # Final Gate (Andon - Signal Quality)
+  # ==========================================================================
+  jidoka-gate:
+    name: "Jidoka Gate: Final Approval"
+    runs-on: ubuntu-latest
+    needs: [tier2-test, tier2-lint, tier2-abi, tier3-property, docs]
+    steps:
+      - name: All gates passed
+        run: |
+          echo "=============================================="
+          echo "  JIDOKA GATE: ALL QUALITY CHECKS PASSED"
+          echo "=============================================="
+          echo ""
+          echo "  Iron Lotus Framework Validation Complete:"
+          echo "  ✓ Tier 1: Compilation verified"
+          echo "  ✓ Tier 2: Tests passed with ≥95% coverage"
+          echo "  ✓ Tier 2: Clippy linting clean"
+          echo "  ✓ Tier 2: ABI compatibility verified"
+          echo "  ✓ Tier 3: Property tests passed"
+          echo "  ✓ Documentation built successfully"
+          echo ""
+          echo "  Ready for merge to main branch."
+          echo "=============================================="
