@@ -200,9 +200,7 @@ impl Pool {
     /// Create a pool from configuration.
     fn from_config(config: PoolConfig) -> Result<Self> {
         let cpu_workers = if config.cpu_workers == 0 {
-            std::thread::available_parallelism()
-                .map(std::num::NonZero::get)
-                .unwrap_or(4)
+            std::thread::available_parallelism().map(std::num::NonZero::get).unwrap_or(4)
         } else {
             config.cpu_workers
         };
@@ -318,9 +316,7 @@ impl Pool {
 
         self.tasks_submitted.fetch_add(1, Ordering::Relaxed);
 
-        self.scheduler
-            .submit(task)
-            .ok_or(KernelError::UblkQueueFull)
+        self.scheduler.submit(task).ok_or(KernelError::UblkQueueFull)
     }
 
     /// Get pool statistics.
@@ -417,22 +413,14 @@ mod tests {
 
     #[test]
     fn test_pool_builder_queue_capacity() {
-        let pool = Pool::builder()
-            .cpu_workers(2)
-            .queue_capacity(100)
-            .build()
-            .unwrap();
+        let pool = Pool::builder().cpu_workers(2).queue_capacity(100).build().unwrap();
         assert!(pool.is_running());
     }
 
     #[test]
     fn test_pool_builder_retry_policy() {
         let policy = RetryPolicy::no_retry();
-        let pool = Pool::builder()
-            .cpu_workers(2)
-            .retry_policy(policy)
-            .build()
-            .unwrap();
+        let pool = Pool::builder().cpu_workers(2).retry_policy(policy).build().unwrap();
         assert!(pool.is_running());
     }
 
@@ -462,9 +450,7 @@ mod tests {
         let pool = Pool::builder().cpu_workers(4).build().unwrap();
 
         for i in 0..10 {
-            let task = Task::binary("echo")
-                .args(vec![format!("Task {}", i)])
-                .build();
+            let task = Task::binary("echo").args(vec![format!("Task {}", i)]).build();
             let result = pool.submit(task).unwrap();
             assert!(result.is_success());
         }
@@ -560,10 +546,8 @@ mod tests {
     fn test_pool_with_priority() {
         let pool = Pool::builder().cpu_workers(2).build().unwrap();
 
-        let task = Task::binary("echo")
-            .args(vec!["high priority"])
-            .priority(TaskPriority::High)
-            .build();
+        let task =
+            Task::binary("echo").args(vec!["high priority"]).priority(TaskPriority::High).build();
 
         let result = pool.submit(task).unwrap();
         assert!(result.is_success());

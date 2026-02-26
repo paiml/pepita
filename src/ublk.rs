@@ -167,16 +167,7 @@ impl UblkCtrlCmd {
     /// Create a control command for a specific queue.
     #[must_use]
     pub const fn with_queue(dev_id: u32, queue_id: u16) -> Self {
-        Self {
-            dev_id,
-            queue_id,
-            len: 0,
-            addr: 0,
-            data: [0],
-            dev_path_len: 0,
-            pad: 0,
-            reserved: 0,
-        }
+        Self { dev_id, queue_id, len: 0, addr: 0, data: [0], dev_path_len: 0, pad: 0, reserved: 0 }
     }
 
     /// Get the device ID.
@@ -269,12 +260,7 @@ impl UblkIoDesc {
     /// * `nr_sectors` - Number of sectors
     #[must_use]
     pub const fn new(op: u32, start_sector: u64, nr_sectors: u32) -> Self {
-        Self {
-            op_flags: op,
-            nr_sectors,
-            start_sector,
-            addr: 0,
-        }
+        Self { op_flags: op, nr_sectors, start_sector, addr: 0 }
     }
 
     /// Get the operation type (lower 8 bits of `op_flags`).
@@ -396,23 +382,13 @@ impl UblkIoCmd {
     /// * `tag` - Request tag (matches blk-mq tag)
     #[must_use]
     pub const fn new(q_id: u16, tag: u16) -> Self {
-        Self {
-            q_id,
-            tag,
-            result: 0,
-            addr: 0,
-        }
+        Self { q_id, tag, result: 0, addr: 0 }
     }
 
     /// Create a completed I/O command with result.
     #[must_use]
     pub const fn completed(q_id: u16, tag: u16, result: i32) -> Self {
-        Self {
-            q_id,
-            tag,
-            result,
-            addr: 0,
-        }
+        Self { q_id, tag, result, addr: 0 }
     }
 
     /// Get the queue ID.
@@ -477,29 +453,17 @@ mod tests {
 
     #[test]
     fn abi_ublk_ctrl_cmd_size() {
-        assert_eq!(
-            size_of::<UblkCtrlCmd>(),
-            32,
-            "UblkCtrlCmd must be exactly 32 bytes"
-        );
+        assert_eq!(size_of::<UblkCtrlCmd>(), 32, "UblkCtrlCmd must be exactly 32 bytes");
     }
 
     #[test]
     fn abi_ublk_io_desc_size() {
-        assert_eq!(
-            size_of::<UblkIoDesc>(),
-            24,
-            "UblkIoDesc must be exactly 24 bytes"
-        );
+        assert_eq!(size_of::<UblkIoDesc>(), 24, "UblkIoDesc must be exactly 24 bytes");
     }
 
     #[test]
     fn abi_ublk_io_cmd_size() {
-        assert_eq!(
-            size_of::<UblkIoCmd>(),
-            16,
-            "UblkIoCmd must be exactly 16 bytes"
-        );
+        assert_eq!(size_of::<UblkIoCmd>(), 16, "UblkIoCmd must be exactly 16 bytes");
     }
 
     // ------------------------------------------------------------------------
@@ -508,26 +472,17 @@ mod tests {
 
     #[test]
     fn abi_ublk_ctrl_cmd_alignment() {
-        assert!(
-            align_of::<UblkCtrlCmd>() >= 4,
-            "UblkCtrlCmd must have at least 4-byte alignment"
-        );
+        assert!(align_of::<UblkCtrlCmd>() >= 4, "UblkCtrlCmd must have at least 4-byte alignment");
     }
 
     #[test]
     fn abi_ublk_io_desc_alignment() {
-        assert!(
-            align_of::<UblkIoDesc>() >= 4,
-            "UblkIoDesc must have at least 4-byte alignment"
-        );
+        assert!(align_of::<UblkIoDesc>() >= 4, "UblkIoDesc must have at least 4-byte alignment");
     }
 
     #[test]
     fn abi_ublk_io_cmd_alignment() {
-        assert!(
-            align_of::<UblkIoCmd>() >= 2,
-            "UblkIoCmd must have at least 2-byte alignment"
-        );
+        assert!(align_of::<UblkIoCmd>() >= 2, "UblkIoCmd must have at least 2-byte alignment");
     }
 
     // ------------------------------------------------------------------------
@@ -589,58 +544,37 @@ mod tests {
 
     #[test]
     fn abi_ioctl_cmd_add_dev() {
-        assert_eq!(
-            UBLK_U_CMD_ADD_DEV, 0xc020_7504,
-            "UBLK_U_CMD_ADD_DEV must match kernel"
-        );
+        assert_eq!(UBLK_U_CMD_ADD_DEV, 0xc020_7504, "UBLK_U_CMD_ADD_DEV must match kernel");
     }
 
     #[test]
     fn abi_ioctl_cmd_del_dev() {
-        assert_eq!(
-            UBLK_U_CMD_DEL_DEV, 0xc020_7505,
-            "UBLK_U_CMD_DEL_DEV must match kernel"
-        );
+        assert_eq!(UBLK_U_CMD_DEL_DEV, 0xc020_7505, "UBLK_U_CMD_DEL_DEV must match kernel");
     }
 
     #[test]
     fn abi_ioctl_cmd_start_dev() {
-        assert_eq!(
-            UBLK_U_CMD_START_DEV, 0xc020_7506,
-            "UBLK_U_CMD_START_DEV must match kernel"
-        );
+        assert_eq!(UBLK_U_CMD_START_DEV, 0xc020_7506, "UBLK_U_CMD_START_DEV must match kernel");
     }
 
     #[test]
     fn abi_ioctl_cmd_stop_dev() {
-        assert_eq!(
-            UBLK_U_CMD_STOP_DEV, 0xc020_7507,
-            "UBLK_U_CMD_STOP_DEV must match kernel"
-        );
+        assert_eq!(UBLK_U_CMD_STOP_DEV, 0xc020_7507, "UBLK_U_CMD_STOP_DEV must match kernel");
     }
 
     #[test]
     fn abi_ioctl_cmd_set_params() {
-        assert_eq!(
-            UBLK_U_CMD_SET_PARAMS, 0xc020_7508,
-            "UBLK_U_CMD_SET_PARAMS must match kernel"
-        );
+        assert_eq!(UBLK_U_CMD_SET_PARAMS, 0xc020_7508, "UBLK_U_CMD_SET_PARAMS must match kernel");
     }
 
     #[test]
     fn abi_ioctl_cmd_get_params() {
-        assert_eq!(
-            UBLK_U_CMD_GET_PARAMS, 0x8020_7509,
-            "UBLK_U_CMD_GET_PARAMS must match kernel"
-        );
+        assert_eq!(UBLK_U_CMD_GET_PARAMS, 0x8020_7509, "UBLK_U_CMD_GET_PARAMS must match kernel");
     }
 
     #[test]
     fn abi_ioctl_io_fetch_req() {
-        assert_eq!(
-            UBLK_U_IO_FETCH_REQ, 0xc010_7520,
-            "UBLK_U_IO_FETCH_REQ must match kernel"
-        );
+        assert_eq!(UBLK_U_IO_FETCH_REQ, 0xc010_7520, "UBLK_U_IO_FETCH_REQ must match kernel");
     }
 
     #[test]
@@ -667,11 +601,7 @@ mod tests {
         ];
 
         for flag in flags {
-            assert!(
-                flag.is_power_of_two(),
-                "flag 0x{:x} must be power of two",
-                flag
-            );
+            assert!(flag.is_power_of_two(), "flag 0x{:x} must be power of two", flag);
         }
     }
 
@@ -687,11 +617,7 @@ mod tests {
 
         for i in 0..ops.len() {
             for j in (i + 1)..ops.len() {
-                assert_ne!(
-                    ops[i], ops[j],
-                    "ops {:?} and {:?} must be distinct",
-                    ops[i], ops[j]
-                );
+                assert_ne!(ops[i], ops[j], "ops {:?} and {:?} must be distinct", ops[i], ops[j]);
             }
         }
     }

@@ -109,18 +109,10 @@ impl HeartbeatPayload {
     /// Create a new heartbeat payload.
     #[must_use]
     pub fn new(worker_id: u32) -> Self {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_millis() as u64;
+        let timestamp =
+            SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
 
-        Self {
-            worker_id,
-            timestamp,
-            pending_tasks: 0,
-            cpu_load: 0,
-            memory_usage: 0,
-        }
+        Self { worker_id, timestamp, pending_tasks: 0, cpu_load: 0, memory_usage: 0 }
     }
 
     /// Set pending tasks count.
@@ -170,13 +162,7 @@ impl HeartbeatPayload {
         let cpu_load = bytes[16];
         let memory_usage = bytes[17];
 
-        Ok(Self {
-            worker_id,
-            timestamp,
-            pending_tasks,
-            cpu_load,
-            memory_usage,
-        })
+        Ok(Self { worker_id, timestamp, pending_tasks, cpu_load, memory_usage })
     }
 }
 
@@ -290,9 +276,7 @@ impl TaskResultPayload {
         };
 
         let exit_code = if bytes[9] == 1 {
-            Some(i32::from_be_bytes([
-                bytes[10], bytes[11], bytes[12], bytes[13],
-            ]))
+            Some(i32::from_be_bytes([bytes[10], bytes[11], bytes[12], bytes[13]]))
         } else {
             None
         };
@@ -315,13 +299,7 @@ impl TaskResultPayload {
             None
         };
 
-        Ok(Self {
-            task_id,
-            state,
-            exit_code,
-            duration_ms,
-            error,
-        })
+        Ok(Self { task_id, state, exit_code, duration_ms, error })
     }
 }
 
@@ -342,12 +320,7 @@ impl RegisterPayload {
     /// Create a new registration payload.
     #[must_use]
     pub fn new(worker_id: u32, backend: Backend, num_workers: u16) -> Self {
-        Self {
-            worker_id,
-            backend,
-            num_workers,
-            name: String::new(),
-        }
+        Self { worker_id, backend, num_workers, name: String::new() }
     }
 
     /// Set worker name.
@@ -410,12 +383,7 @@ impl RegisterPayload {
             String::new()
         };
 
-        Ok(Self {
-            worker_id,
-            backend,
-            num_workers,
-            name,
-        })
+        Ok(Self { worker_id, backend, num_workers, name })
     }
 }
 
@@ -485,10 +453,7 @@ impl Message {
     /// Create a task cancel message.
     #[must_use]
     pub fn task_cancel(task_id: TaskId) -> Self {
-        Self::new(
-            MessageType::TaskCancel,
-            task_id.as_u64().to_be_bytes().to_vec(),
-        )
+        Self::new(MessageType::TaskCancel, task_id.as_u64().to_be_bytes().to_vec())
     }
 
     /// Get the message type.
@@ -631,10 +596,8 @@ mod tests {
 
     #[test]
     fn test_heartbeat_payload_builders() {
-        let payload = HeartbeatPayload::new(1)
-            .with_pending_tasks(10)
-            .with_cpu_load(75)
-            .with_memory_usage(50);
+        let payload =
+            HeartbeatPayload::new(1).with_pending_tasks(10).with_cpu_load(75).with_memory_usage(50);
 
         assert_eq!(payload.pending_tasks, 10);
         assert_eq!(payload.cpu_load, 75);
@@ -670,11 +633,8 @@ mod tests {
 
     #[test]
     fn test_task_result_payload_new() {
-        let payload = TaskResultPayload::new(
-            TaskId::new(123),
-            TaskState::Completed,
-            Duration::from_secs(5),
-        );
+        let payload =
+            TaskResultPayload::new(TaskId::new(123), TaskState::Completed, Duration::from_secs(5));
 
         assert_eq!(payload.task_id, 123);
         assert_eq!(payload.state, TaskState::Completed);
@@ -845,11 +805,8 @@ mod tests {
 
     #[test]
     fn test_message_task_result() {
-        let payload = TaskResultPayload::new(
-            TaskId::new(100),
-            TaskState::Completed,
-            Duration::from_secs(10),
-        );
+        let payload =
+            TaskResultPayload::new(TaskId::new(100), TaskState::Completed, Duration::from_secs(10));
         let msg = Message::task_result(payload.clone());
 
         assert_eq!(msg.message_type(), MessageType::TaskResult);

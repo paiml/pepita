@@ -51,10 +51,7 @@ impl RetryPolicy {
     /// Create a policy with no retries.
     #[must_use]
     pub fn no_retry() -> Self {
-        Self {
-            max_retries: 0,
-            ..Self::default()
-        }
+        Self { max_retries: 0, ..Self::default() }
     }
 
     /// Create a policy for critical tasks (more retries, longer delays).
@@ -144,11 +141,7 @@ impl RetryState {
     /// Create a new retry state.
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            attempts: 0,
-            last_failure: None,
-            last_error: None,
-        }
+        Self { attempts: 0, last_failure: None, last_error: None }
     }
 
     /// Record a failure.
@@ -378,9 +371,7 @@ impl FailureDetector {
     #[must_use]
     pub fn get_status(&self, worker_id: WorkerId) -> HealthStatus {
         let workers = self.workers.read().unwrap();
-        workers
-            .get(&worker_id)
-            .map_or(HealthStatus::Unknown, |h| h.status)
+        workers.get(&worker_id).map_or(HealthStatus::Unknown, |h| h.status)
     }
 
     /// Get worker health record.

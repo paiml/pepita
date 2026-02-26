@@ -81,10 +81,7 @@ impl RequestOp {
     /// Check if this operation is a zone command.
     #[must_use]
     pub const fn is_zone_op(&self) -> bool {
-        matches!(
-            self,
-            Self::ZoneReset | Self::ZoneOpen | Self::ZoneClose | Self::ZoneFinish
-        )
+        matches!(self, Self::ZoneReset | Self::ZoneOpen | Self::ZoneClose | Self::ZoneFinish)
     }
 
     /// Convert from u8.
@@ -200,11 +197,7 @@ impl BioVec {
     /// Create a new bio vector.
     #[must_use]
     pub const fn new(addr: u64, len: u32) -> Self {
-        Self {
-            addr,
-            len,
-            offset: 0,
-        }
+        Self { addr, len, offset: 0 }
     }
 
     /// Create a new bio vector with offset.
@@ -406,12 +399,7 @@ impl TagSetConfig {
     /// * `queue_depth` - Maximum concurrent requests per queue
     #[must_use]
     pub const fn new(nr_hw_queues: u16, queue_depth: u16) -> Self {
-        Self {
-            nr_hw_queues,
-            queue_depth,
-            numa_node: -1,
-            flags: 0,
-        }
+        Self { nr_hw_queues, queue_depth, numa_node: -1, flags: 0 }
     }
 
     /// Set the NUMA node.

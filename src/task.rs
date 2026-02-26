@@ -129,10 +129,7 @@ impl TaskState {
     /// Check if task is in a terminal state.
     #[must_use]
     pub const fn is_terminal(self) -> bool {
-        matches!(
-            self,
-            Self::Completed | Self::Failed | Self::Cancelled | Self::TimedOut
-        )
+        matches!(self, Self::Completed | Self::Failed | Self::Cancelled | Self::TimedOut)
     }
 
     /// Check if task is still active.
@@ -313,10 +310,7 @@ impl PipelineTask {
     /// Create a new pipeline task.
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            stages: Vec::new(),
-            pipe_output: true,
-        }
+        Self { stages: Vec::new(), pipe_output: true }
     }
 
     /// Add a stage to the pipeline.
@@ -854,9 +848,7 @@ mod tests {
 
     #[test]
     fn test_shader_task_with_inputs_outputs() {
-        let task = ShaderTask::new(vec![])
-            .with_inputs(vec![1024, 2048])
-            .with_outputs(vec![4096]);
+        let task = ShaderTask::new(vec![]).with_inputs(vec![1024, 2048]).with_outputs(vec![4096]);
         assert_eq!(task.input_sizes, vec![1024, 2048]);
         assert_eq!(task.output_sizes, vec![4096]);
     }
@@ -909,9 +901,7 @@ mod tests {
 
     #[test]
     fn test_task_shader_builder() {
-        let task = Task::shader(vec![0x03, 0x02, 0x23, 0x07])
-            .backend(Backend::Gpu)
-            .build();
+        let task = Task::shader(vec![0x03, 0x02, 0x23, 0x07]).backend(Backend::Gpu).build();
 
         assert!(task.is_shader());
         assert_eq!(task.backend, Backend::Gpu);
@@ -955,19 +945,15 @@ mod tests {
 
     #[test]
     fn test_task_timeout() {
-        let task = Task::binary("./worker")
-            .timeout(Duration::from_secs(30))
-            .build();
+        let task = Task::binary("./worker").timeout(Duration::from_secs(30)).build();
 
         assert_eq!(task.timeout, Some(Duration::from_secs(30)));
     }
 
     #[test]
     fn test_task_metadata() {
-        let task = Task::binary("./worker")
-            .metadata("key1", "value1")
-            .metadata("key2", "value2")
-            .build();
+        let task =
+            Task::binary("./worker").metadata("key1", "value1").metadata("key2", "value2").build();
 
         assert_eq!(task.metadata.get("key1"), Some(&"value1".to_string()));
         assert_eq!(task.metadata.get("key2"), Some(&"value2".to_string()));

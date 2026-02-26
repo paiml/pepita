@@ -190,10 +190,7 @@ impl KernelError {
     /// Check if error is a resource exhaustion error.
     #[must_use]
     pub const fn is_resource_error(self) -> bool {
-        matches!(
-            self,
-            Self::OutOfMemory | Self::UblkQueueFull | Self::NoTagsAvailable
-        )
+        matches!(self, Self::OutOfMemory | Self::UblkQueueFull | Self::NoTagsAvailable)
     }
 }
 
@@ -263,12 +260,7 @@ mod tests {
             let errno = error.to_errno();
             let recovered = KernelError::from_errno(errno);
             // Note: Some errors share the same errno, so we check errno matches
-            assert_eq!(
-                recovered.to_errno(),
-                errno,
-                "errno roundtrip failed for {:?}",
-                error
-            );
+            assert_eq!(recovered.to_errno(), errno, "errno roundtrip failed for {:?}", error);
         }
     }
 
@@ -284,11 +276,7 @@ mod tests {
         ];
 
         for error in errors {
-            assert!(
-                error.to_errno() < 0,
-                "errno for {:?} should be negative",
-                error
-            );
+            assert!(error.to_errno() < 0, "errno for {:?} should be negative", error);
         }
     }
 
@@ -367,10 +355,7 @@ mod tests {
         for error in errors {
             let display = format!("{}", error);
             assert!(!display.is_empty(), "display for {:?} is empty", error);
-            assert!(
-                !display.contains("KernelError"),
-                "display should be human-readable"
-            );
+            assert!(!display.contains("KernelError"), "display should be human-readable");
         }
     }
 

@@ -154,9 +154,7 @@ impl SimdOps {
     /// Create a new SIMD operations instance
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            caps: SimdCapabilities::detect(),
-        }
+        Self { caps: SimdCapabilities::detect() }
     }
 
     /// Create with specific capabilities (for testing)
@@ -545,9 +543,7 @@ impl MatrixOps {
     /// Create a new matrix operations instance
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            simd: SimdOps::new(),
-        }
+        Self { simd: SimdOps::new() }
     }
 
     /// Get SIMD capabilities

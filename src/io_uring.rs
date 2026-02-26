@@ -416,11 +416,7 @@ impl IoUringCqe {
     /// Create a new CQE (typically created by kernel).
     #[must_use]
     pub const fn new(user_data: u64, res: i32, flags: u32) -> Self {
-        Self {
-            user_data,
-            res,
-            flags,
-        }
+        Self { user_data, res, flags }
     }
 
     /// Check if the operation succeeded.
@@ -487,20 +483,12 @@ mod tests {
 
     #[test]
     fn abi_io_uring_sqe_size() {
-        assert_eq!(
-            size_of::<IoUringSqe>(),
-            64,
-            "IoUringSqe must be exactly 64 bytes"
-        );
+        assert_eq!(size_of::<IoUringSqe>(), 64, "IoUringSqe must be exactly 64 bytes");
     }
 
     #[test]
     fn abi_io_uring_cqe_size() {
-        assert_eq!(
-            size_of::<IoUringCqe>(),
-            16,
-            "IoUringCqe must be exactly 16 bytes"
-        );
+        assert_eq!(size_of::<IoUringCqe>(), 16, "IoUringCqe must be exactly 16 bytes");
     }
 
     // ------------------------------------------------------------------------
@@ -509,18 +497,12 @@ mod tests {
 
     #[test]
     fn abi_io_uring_sqe_alignment() {
-        assert!(
-            align_of::<IoUringSqe>() >= 8,
-            "IoUringSqe must have at least 8-byte alignment"
-        );
+        assert!(align_of::<IoUringSqe>() >= 8, "IoUringSqe must have at least 8-byte alignment");
     }
 
     #[test]
     fn abi_io_uring_cqe_alignment() {
-        assert!(
-            align_of::<IoUringCqe>() >= 8,
-            "IoUringCqe must have at least 8-byte alignment"
-        );
+        assert!(align_of::<IoUringCqe>() >= 8, "IoUringCqe must have at least 8-byte alignment");
     }
 
     // ------------------------------------------------------------------------
@@ -532,59 +514,19 @@ mod tests {
         let sqe = IoUringSqe::new();
         let base = &sqe as *const _ as usize;
 
-        assert_eq!(
-            &sqe.opcode as *const _ as usize - base,
-            0,
-            "opcode at offset 0"
-        );
-        assert_eq!(
-            &sqe.flags as *const _ as usize - base,
-            1,
-            "flags at offset 1"
-        );
-        assert_eq!(
-            &sqe.ioprio as *const _ as usize - base,
-            2,
-            "ioprio at offset 2"
-        );
+        assert_eq!(&sqe.opcode as *const _ as usize - base, 0, "opcode at offset 0");
+        assert_eq!(&sqe.flags as *const _ as usize - base, 1, "flags at offset 1");
+        assert_eq!(&sqe.ioprio as *const _ as usize - base, 2, "ioprio at offset 2");
         assert_eq!(&sqe.fd as *const _ as usize - base, 4, "fd at offset 4");
         assert_eq!(&sqe.off as *const _ as usize - base, 8, "off at offset 8");
-        assert_eq!(
-            &sqe.addr as *const _ as usize - base,
-            16,
-            "addr at offset 16"
-        );
+        assert_eq!(&sqe.addr as *const _ as usize - base, 16, "addr at offset 16");
         assert_eq!(&sqe.len as *const _ as usize - base, 24, "len at offset 24");
-        assert_eq!(
-            &sqe.op_flags as *const _ as usize - base,
-            28,
-            "op_flags at offset 28"
-        );
-        assert_eq!(
-            &sqe.user_data as *const _ as usize - base,
-            32,
-            "user_data at offset 32"
-        );
-        assert_eq!(
-            &sqe.buf_index as *const _ as usize - base,
-            40,
-            "buf_index at offset 40"
-        );
-        assert_eq!(
-            &sqe.personality as *const _ as usize - base,
-            42,
-            "personality at offset 42"
-        );
-        assert_eq!(
-            &sqe.splice_fd_in as *const _ as usize - base,
-            44,
-            "splice_fd_in at offset 44"
-        );
-        assert_eq!(
-            &sqe.addr3 as *const _ as usize - base,
-            48,
-            "addr3 at offset 48"
-        );
+        assert_eq!(&sqe.op_flags as *const _ as usize - base, 28, "op_flags at offset 28");
+        assert_eq!(&sqe.user_data as *const _ as usize - base, 32, "user_data at offset 32");
+        assert_eq!(&sqe.buf_index as *const _ as usize - base, 40, "buf_index at offset 40");
+        assert_eq!(&sqe.personality as *const _ as usize - base, 42, "personality at offset 42");
+        assert_eq!(&sqe.splice_fd_in as *const _ as usize - base, 44, "splice_fd_in at offset 44");
+        assert_eq!(&sqe.addr3 as *const _ as usize - base, 48, "addr3 at offset 48");
     }
 
     #[test]
@@ -592,17 +534,9 @@ mod tests {
         let cqe = IoUringCqe::default();
         let base = &cqe as *const _ as usize;
 
-        assert_eq!(
-            &cqe.user_data as *const _ as usize - base,
-            0,
-            "user_data at offset 0"
-        );
+        assert_eq!(&cqe.user_data as *const _ as usize - base, 0, "user_data at offset 0");
         assert_eq!(&cqe.res as *const _ as usize - base, 8, "res at offset 8");
-        assert_eq!(
-            &cqe.flags as *const _ as usize - base,
-            12,
-            "flags at offset 12"
-        );
+        assert_eq!(&cqe.flags as *const _ as usize - base, 12, "flags at offset 12");
     }
 
     // ------------------------------------------------------------------------
@@ -611,10 +545,7 @@ mod tests {
 
     #[test]
     fn abi_uring_cmd_opcode() {
-        assert_eq!(
-            IORING_OP_URING_CMD, 46,
-            "IORING_OP_URING_CMD must be 46 for ublk"
-        );
+        assert_eq!(IORING_OP_URING_CMD, 46, "IORING_OP_URING_CMD must be 46 for ublk");
     }
 
     #[test]
@@ -641,12 +572,7 @@ mod tests {
 
     #[test]
     fn abi_opcodes_within_range() {
-        let opcodes = [
-            IORING_OP_NOP,
-            IORING_OP_READ,
-            IORING_OP_WRITE,
-            IORING_OP_URING_CMD,
-        ];
+        let opcodes = [IORING_OP_NOP, IORING_OP_READ, IORING_OP_WRITE, IORING_OP_URING_CMD];
 
         for op in opcodes {
             assert!(op < IORING_OP_LAST, "opcode {} must be < LAST", op);
@@ -670,11 +596,7 @@ mod tests {
         ];
 
         for flag in flags {
-            assert!(
-                flag.is_power_of_two(),
-                "flag 0x{:x} must be power of two",
-                flag
-            );
+            assert!(flag.is_power_of_two(), "flag 0x{:x} must be power of two", flag);
         }
     }
 

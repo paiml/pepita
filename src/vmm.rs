@@ -446,13 +446,7 @@ impl MemoryRegion {
         memory_size: u64,
         userspace_addr: u64,
     ) -> Self {
-        Self {
-            slot,
-            guest_phys_addr,
-            memory_size,
-            userspace_addr,
-            flags: 0,
-        }
+        Self { slot, guest_phys_addr, memory_size, userspace_addr, flags: 0 }
     }
 
     /// Set readonly flag
@@ -534,10 +528,7 @@ impl Vcpu {
 #[cfg(feature = "std")]
 impl std::fmt::Debug for Vcpu {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Vcpu")
-            .field("id", &self.id)
-            .field("running", &self.is_running())
-            .finish()
+        f.debug_struct("Vcpu").field("id", &self.id).field("running", &self.is_running()).finish()
     }
 }
 
@@ -627,11 +618,7 @@ impl MicroVm {
         }
 
         // Mock: run first vCPU
-        let exit = if let Some(vcpu) = self.vcpus.first() {
-            vcpu.run()?
-        } else {
-            ExitReason::Halt
-        };
+        let exit = if let Some(vcpu) = self.vcpus.first() { vcpu.run()? } else { ExitReason::Halt };
 
         self.exit_count.fetch_add(1, Ordering::Relaxed);
 
@@ -755,10 +742,7 @@ impl Jailer {
     /// Create a new jailer
     #[must_use]
     pub fn new(config: JailerConfig) -> Self {
-        Self {
-            config,
-            active: AtomicBool::new(false),
-        }
+        Self { config, active: AtomicBool::new(false) }
     }
 
     /// Get configuration

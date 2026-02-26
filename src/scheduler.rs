@@ -211,10 +211,7 @@ struct WorkerState<T> {
 
 impl<T> WorkerState<T> {
     fn new(capacity: usize) -> Self {
-        Self {
-            deque: WorkStealingDeque::new(capacity),
-            active: AtomicBool::new(true),
-        }
+        Self { deque: WorkStealingDeque::new(capacity), active: AtomicBool::new(true) }
     }
 }
 
@@ -261,9 +258,8 @@ impl<T> Scheduler<T> {
     /// * `queue_capacity` - Maximum tasks per worker queue
     #[must_use]
     pub fn with_capacity(num_workers: usize, queue_capacity: usize) -> Self {
-        let workers: Vec<_> = (0..num_workers)
-            .map(|_| Arc::new(WorkerState::new(queue_capacity)))
-            .collect();
+        let workers: Vec<_> =
+            (0..num_workers).map(|_| Arc::new(WorkerState::new(queue_capacity))).collect();
 
         Self {
             workers: RwLock::new(workers),
@@ -296,12 +292,10 @@ impl<T> Scheduler<T> {
         let start = self.submit_counter.fetch_add(1, Ordering::Relaxed) % workers.len();
 
         // Find first active worker with space
-        let target_idx = (0..workers.len())
-            .map(|i| (start + i) % workers.len())
-            .find(|&idx| {
-                workers[idx].active.load(Ordering::Acquire)
-                    && workers[idx].deque.len() < workers[idx].deque.capacity()
-            })?;
+        let target_idx = (0..workers.len()).map(|i| (start + i) % workers.len()).find(|&idx| {
+            workers[idx].active.load(Ordering::Acquire)
+                && workers[idx].deque.len() < workers[idx].deque.capacity()
+        })?;
 
         // Try to push to the selected worker
         if workers[target_idx].deque.push(task).is_ok() {

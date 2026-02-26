@@ -111,11 +111,8 @@ fn bench_dma_buffer(c: &mut Criterion) {
     });
 
     group.bench_function("DmaBuffer::contains", |b| {
-        let buf = DmaBuffer::new(
-            PhysAddr::new(0x1000_0000),
-            VirtAddr::new(0xffff_8000_0000_0000),
-            4096,
-        );
+        let buf =
+            DmaBuffer::new(PhysAddr::new(0x1000_0000), VirtAddr::new(0xffff_8000_0000_0000), 4096);
         b.iter(|| {
             let contains = black_box(&buf).contains(black_box(PhysAddr::new(0x1000_0800)));
             black_box(contains)

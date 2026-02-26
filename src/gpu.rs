@@ -239,23 +239,13 @@ impl Buffer {
     /// Create a new buffer
     #[must_use]
     pub fn new(id: u64, size: u64, usage: BufferUsage) -> Self {
-        Self {
-            id,
-            size,
-            usage,
-            data: vec![0u8; size as usize],
-        }
+        Self { id, size, usage, data: vec![0u8; size as usize] }
     }
 
     /// Create with initial data
     #[must_use]
     pub fn with_data(id: u64, data: &[u8], usage: BufferUsage) -> Self {
-        Self {
-            id,
-            size: data.len() as u64,
-            usage,
-            data: data.to_vec(),
-        }
+        Self { id, size: data.len() as u64, usage, data: data.to_vec() }
     }
 
     /// Get buffer ID
@@ -557,10 +547,7 @@ impl ComputePipeline {
     /// Create a new compute pipeline
     #[must_use]
     pub fn new(shader: ComputeShader) -> Self {
-        Self {
-            shader: Arc::new(shader),
-            bind_groups: 1,
-        }
+        Self { shader: Arc::new(shader), bind_groups: 1 }
     }
 
     /// Set number of bind groups
@@ -727,17 +714,13 @@ mod tests {
 
     #[test]
     fn test_compute_shader_with_entry_point() {
-        let shader = ComputeShader::from_wgsl("")
-            .unwrap()
-            .with_entry_point("compute_main");
+        let shader = ComputeShader::from_wgsl("").unwrap().with_entry_point("compute_main");
         assert_eq!(shader.entry_point(), "compute_main");
     }
 
     #[test]
     fn test_compute_shader_with_workgroup_size() {
-        let shader = ComputeShader::from_wgsl("")
-            .unwrap()
-            .with_workgroup_size(128, 1, 1);
+        let shader = ComputeShader::from_wgsl("").unwrap().with_workgroup_size(128, 1, 1);
         assert_eq!(shader.workgroup_size(), (128, 1, 1));
     }
 
@@ -768,9 +751,7 @@ mod tests {
     #[test]
     fn test_gpu_device_create_buffer_uninit() {
         let device = GpuDevice::mock();
-        let buffer = device
-            .create_buffer_uninit(1024, BufferUsage::STORAGE)
-            .unwrap();
+        let buffer = device.create_buffer_uninit(1024, BufferUsage::STORAGE).unwrap();
         assert_eq!(buffer.size(), 1024);
     }
 
@@ -797,12 +778,8 @@ mod tests {
         let device = GpuDevice::mock();
 
         let src_data = vec![1u8, 2, 3, 4];
-        let src = device
-            .create_buffer(&src_data, BufferUsage::COPY_SRC)
-            .unwrap();
-        let mut dst = device
-            .create_buffer_uninit(4, BufferUsage::COPY_DST)
-            .unwrap();
+        let src = device.create_buffer(&src_data, BufferUsage::COPY_SRC).unwrap();
+        let mut dst = device.create_buffer_uninit(4, BufferUsage::COPY_DST).unwrap();
 
         device.copy_buffer(&src, &mut dst).unwrap();
         assert_eq!(dst.data(), &src_data);

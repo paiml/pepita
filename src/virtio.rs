@@ -114,12 +114,7 @@ impl VirtqDesc {
     /// Create a new descriptor
     #[must_use]
     pub const fn new(addr: u64, len: u32, flags: u16, next: u16) -> Self {
-        Self {
-            addr,
-            len,
-            flags,
-            next,
-        }
+        Self { addr, len, flags, next }
     }
 
     /// Check if descriptor has next
@@ -198,12 +193,7 @@ pub struct VirtQueueConfig {
 
 impl Default for VirtQueueConfig {
     fn default() -> Self {
-        Self {
-            size: DEFAULT_QUEUE_SIZE,
-            desc_addr: 0,
-            avail_addr: 0,
-            used_addr: 0,
-        }
+        Self { size: DEFAULT_QUEUE_SIZE, desc_addr: 0, avail_addr: 0, used_addr: 0 }
     }
 }
 
@@ -240,10 +230,7 @@ impl VirtQueue {
     /// Create with default config and size
     #[must_use]
     pub fn with_size(size: u16) -> Self {
-        Self::new(VirtQueueConfig {
-            size,
-            ..Default::default()
-        })
+        Self::new(VirtQueueConfig { size, ..Default::default() })
     }
 
     /// Check if queue is ready
@@ -639,10 +626,7 @@ impl VirtioVsock {
         let local = VsockAddr::new(self.cid, 0); // Ephemeral port
         let conn = VsockConnection::new(local, remote);
 
-        let mut connections = self
-            .connections
-            .write()
-            .map_err(|_| KernelError::ResourceBusy)?;
+        let mut connections = self.connections.write().map_err(|_| KernelError::ResourceBusy)?;
         connections.insert((local, remote), conn);
 
         Ok(())
@@ -735,31 +719,19 @@ impl BlockRequestHeader {
     /// Create a new read request
     #[must_use]
     pub const fn read(sector: u64) -> Self {
-        Self {
-            request_type: BlockRequestType::In as u32,
-            reserved: 0,
-            sector,
-        }
+        Self { request_type: BlockRequestType::In as u32, reserved: 0, sector }
     }
 
     /// Create a new write request
     #[must_use]
     pub const fn write(sector: u64) -> Self {
-        Self {
-            request_type: BlockRequestType::Out as u32,
-            reserved: 0,
-            sector,
-        }
+        Self { request_type: BlockRequestType::Out as u32, reserved: 0, sector }
     }
 
     /// Create a flush request
     #[must_use]
     pub const fn flush() -> Self {
-        Self {
-            request_type: BlockRequestType::Flush as u32,
-            reserved: 0,
-            sector: 0,
-        }
+        Self { request_type: BlockRequestType::Flush as u32, reserved: 0, sector: 0 }
     }
 
     /// Get request type
@@ -782,11 +754,7 @@ pub struct BlockConfig {
 
 impl Default for BlockConfig {
     fn default() -> Self {
-        Self {
-            capacity: 0,
-            blk_size: 512,
-            read_only: false,
-        }
+        Self { capacity: 0, blk_size: 512, read_only: false }
     }
 }
 
@@ -826,10 +794,7 @@ impl VirtioBlock {
     #[must_use]
     pub fn with_capacity_mib(mib: u64) -> Self {
         let sectors = mib * 1024 * 1024 / 512;
-        Self::new(BlockConfig {
-            capacity: sectors,
-            ..Default::default()
-        })
+        Self::new(BlockConfig { capacity: sectors, ..Default::default() })
     }
 
     /// Get capacity in sectors
@@ -902,10 +867,7 @@ impl VirtioBlock {
         let offset = (sector * 512) as usize;
         let len = data.len();
 
-        let mut storage = self
-            .storage
-            .write()
-            .map_err(|_| KernelError::ResourceBusy)?;
+        let mut storage = self.storage.write().map_err(|_| KernelError::ResourceBusy)?;
 
         if offset + len > storage.len() {
             return Err(KernelError::InvalidArgument);
@@ -1290,11 +1252,7 @@ mod tests {
 
     #[test]
     fn test_virtio_block_read_only() {
-        let config = BlockConfig {
-            capacity: 2048,
-            read_only: true,
-            ..Default::default()
-        };
+        let config = BlockConfig { capacity: 2048, read_only: true, ..Default::default() };
         let block = VirtioBlock::new(config);
         block.activate();
 

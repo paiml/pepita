@@ -235,12 +235,9 @@ impl AtomicStats {
 
     /// Record a write operation
     pub fn record_write(&self, orig_size: usize, compr_size: usize) {
-        self.orig_data_size
-            .fetch_add(orig_size as u64, Ordering::Relaxed);
-        self.compr_data_size
-            .fetch_add(compr_size as u64, Ordering::Relaxed);
-        self.mem_used_total
-            .fetch_add(compr_size as u64, Ordering::Relaxed);
+        self.orig_data_size.fetch_add(orig_size as u64, Ordering::Relaxed);
+        self.compr_data_size.fetch_add(compr_size as u64, Ordering::Relaxed);
+        self.mem_used_total.fetch_add(compr_size as u64, Ordering::Relaxed);
         self.pages_stored.fetch_add(1, Ordering::Relaxed);
         self.num_writes.fetch_add(1, Ordering::Relaxed);
     }
@@ -262,12 +259,9 @@ impl AtomicStats {
     /// Record a huge (incompressible) page
     pub fn record_huge_page(&self) {
         self.huge_pages.fetch_add(1, Ordering::Relaxed);
-        self.orig_data_size
-            .fetch_add(PAGE_SIZE as u64, Ordering::Relaxed);
-        self.compr_data_size
-            .fetch_add(PAGE_SIZE as u64, Ordering::Relaxed);
-        self.mem_used_total
-            .fetch_add(PAGE_SIZE as u64, Ordering::Relaxed);
+        self.orig_data_size.fetch_add(PAGE_SIZE as u64, Ordering::Relaxed);
+        self.compr_data_size.fetch_add(PAGE_SIZE as u64, Ordering::Relaxed);
+        self.mem_used_total.fetch_add(PAGE_SIZE as u64, Ordering::Relaxed);
         self.pages_stored.fetch_add(1, Ordering::Relaxed);
         self.num_writes.fetch_add(1, Ordering::Relaxed);
     }
@@ -357,36 +351,25 @@ impl PageTable {
     /// Create a new page table
     #[must_use]
     pub fn new() -> Self {
-        Self {
-            entries: RwLock::new(HashMap::new()),
-        }
+        Self { entries: RwLock::new(HashMap::new()) }
     }
 
     /// Get a page entry
     pub fn get(&self, page_index: u64) -> Result<PageEntry> {
         let entries = self.entries.read().map_err(|_| KernelError::ResourceBusy)?;
-        Ok(entries
-            .get(&page_index)
-            .cloned()
-            .unwrap_or(PageEntry::Empty))
+        Ok(entries.get(&page_index).cloned().unwrap_or(PageEntry::Empty))
     }
 
     /// Set a page entry
     pub fn set(&self, page_index: u64, entry: PageEntry) -> Result<()> {
-        let mut entries = self
-            .entries
-            .write()
-            .map_err(|_| KernelError::ResourceBusy)?;
+        let mut entries = self.entries.write().map_err(|_| KernelError::ResourceBusy)?;
         entries.insert(page_index, entry);
         Ok(())
     }
 
     /// Remove a page entry
     pub fn remove(&self, page_index: u64) -> Result<Option<PageEntry>> {
-        let mut entries = self
-            .entries
-            .write()
-            .map_err(|_| KernelError::ResourceBusy)?;
+        let mut entries = self.entries.write().map_err(|_| KernelError::ResourceBusy)?;
         Ok(entries.remove(&page_index))
     }
 
@@ -540,11 +523,7 @@ impl CompressionStream {
 
         // Token: high 4 bits = literal length, low 4 bits = match length - 4
         let lit_token = if literal_len >= 15 { 15 } else { literal_len } as u8;
-        let match_token = if match_len - 4 >= 15 {
-            15
-        } else {
-            match_len - 4
-        } as u8;
+        let match_token = if match_len - 4 >= 15 { 15 } else { match_len - 4 } as u8;
         output.push((lit_token << 4) | match_token);
 
         // Extended literal length
@@ -809,20 +788,11 @@ impl ZramDevice {
         // Check if compression is worthwhile (at least 12.5% savings)
         if compressed.len() >= PAGE_SIZE - PAGE_SIZE / 8 {
             // Store uncompressed
-            self.page_table.set(
-                page_index,
-                PageEntry::Uncompressed {
-                    data: page_data.to_vec(),
-                },
-            )?;
+            self.page_table
+                .set(page_index, PageEntry::Uncompressed { data: page_data.to_vec() })?;
             self.stats.record_huge_page();
         } else {
-            self.page_table.set(
-                page_index,
-                PageEntry::Compressed {
-                    data: compressed.clone(),
-                },
-            )?;
+            self.page_table.set(page_index, PageEntry::Compressed { data: compressed.clone() })?;
             self.stats.record_write(PAGE_SIZE, compressed.len());
         }
 
@@ -947,11 +917,7 @@ mod tests {
 
     #[test]
     fn test_stats_special_pages() {
-        let stats = ZramStats {
-            zero_pages: 10,
-            same_pages: 5,
-            ..Default::default()
-        };
+        let stats = ZramStats { zero_pages: 10, same_pages: 5, ..Default::default() };
         assert_eq!(stats.special_pages(), 15);
     }
 
@@ -1182,9 +1148,8 @@ mod tests {
 
         // Write compressible data
         for i in 0..10 {
-            let data: Vec<u8> = (0..PAGE_SIZE)
-                .map(|j| ((j / 64 + i as usize) % 256) as u8)
-                .collect();
+            let data: Vec<u8> =
+                (0..PAGE_SIZE).map(|j| ((j / 64 + i as usize) % 256) as u8).collect();
             device.write_page(i, &data).unwrap();
         }
 
