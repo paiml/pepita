@@ -1,3 +1,16 @@
+[workspace]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Pragmatic AI Labs <info@paiml.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/paiml/pepita"
+rust-version = "1.75"
+
+[workspace.dependencies]
+
 [package]
 name = "pepita"
 version = "0.1.0"
@@ -37,6 +50,24 @@ proptest = { version = "1.5", optional = true }
 # Testing (EXTREME TDD)
 criterion = { version = "0.5", features = ["html_reports"] }
 
+[workspace.lints.rust]
+unsafe_code = "deny"
+unsafe_op_in_unsafe_fn = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "allow"
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+
+[lints]
+workspace = true
+
 [profile.release]
 opt-level = "z"      # Optimize for size (kernel)
 lto = true           # Link-time optimization
@@ -58,9 +89,8 @@ name = "struct_layouts"
 harness = false
 
 [package.metadata.docs.rs]
-rustdoc-args = ["--generate-link-to-definition"]
+rustdoc-args = ["--generate-link-to-definition", "--cfg", "docsrs"]
 all-features = true
-rustdoc-args = ["--cfg", "docsrs"]
 
 # PMAT Quality Gates
 [package.metadata.pmat]
@@ -71,3 +101,8 @@ max_cognitive_complexity = 15
 
 [package.metadata.release]
 shared-version = true
+
+[[package.metadata.release.pre-release-replacements]]
+file = "CHANGELOG.md"
+search = "## \\[Unreleased\\]"
+replace = "## [{{version}}] - {{date}}"

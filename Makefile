@@ -2,7 +2,7 @@
 # Iron Lotus Framework + Certeza Methodology
 # Quality Gates: 95% coverage, 80% mutation score, zero C dependencies
 
-.PHONY: all build test clean tier1 tier2 tier3 coverage mutation check fmt clippy doc audit
+.PHONY: all build test test-fast clean tier1 tier2 tier3 coverage mutation check fmt lint clippy doc audit
 
 # ============================================================================
 # DEFAULT TARGET
@@ -49,6 +49,15 @@ clippy:
 
 test-unit:
 	@echo "Running unit tests..."
+	cargo test --lib
+
+test:
+	cargo test
+
+lint:
+	cargo fmt --check && cargo clippy -- -D warnings
+
+test-fast:
 	cargo test --lib
 
 # ============================================================================

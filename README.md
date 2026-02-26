@@ -1,4 +1,8 @@
+<p align="center">
+
 # Pepita: Sovereign AI Kernel Interfaces
+
+</p>
 
 [![Rust](https://img.shields.io/badge/rust-100%25-orange.svg)](https://www.rust-lang.org/)
 [![Zero C/C++](https://img.shields.io/badge/C%2FC%2B%2B-0%25-blue.svg)](#)
