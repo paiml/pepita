@@ -45,6 +45,7 @@ panic = "abort"      # No unwinding in kernel
 strip = true         # Strip symbols
 
 [profile.dev]
+panic = "abort"
 opt-level = 0
 debug = true
 
@@ -57,6 +58,7 @@ name = "struct_layouts"
 harness = false
 
 [package.metadata.docs.rs]
+rustdoc-args = ["--generate-link-to-definition"]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
@@ -66,3 +68,6 @@ min_coverage = 95
 min_mutation_score = 80
 max_cyclomatic_complexity = 10
 max_cognitive_complexity = 15
+
+[package.metadata.release]
+shared-version = true

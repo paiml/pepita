@@ -73,7 +73,7 @@ pub const UBLK_U_IO_NEED_GET_DATA: u32 = 0xc010_7522;
 /// Device supports zero-copy I/O
 pub const UBLK_F_SUPPORT_ZERO_COPY: u64 = 1 << 0;
 
-/// Device uses URING_CMD with ioctl encoding
+/// Device uses `URING_CMD` with ioctl encoding
 pub const UBLK_F_URING_CMD_COMP_IN_TASK: u64 = 1 << 1;
 
 /// Device needs to get data for writes
@@ -117,7 +117,7 @@ pub const UBLK_IO_F_FUA: u32 = 1 << 8;
 /// ublk control command structure.
 ///
 /// Used for device management operations (add, delete, start, stop, params).
-/// Passed to `/dev/ublk-control` via io_uring URING_CMD.
+/// Passed to `/dev/ublk-control` via `io_uring` `URING_CMD`.
 ///
 /// ## Layout (32 bytes total)
 ///
@@ -240,9 +240,9 @@ impl Default for UblkCtrlCmd {
 ///
 /// | Offset | Size | Field |
 /// |--------|------|-------|
-/// | 0 | 4 | op_flags |
-/// | 4 | 4 | nr_sectors |
-/// | 8 | 8 | start_sector |
+/// | 0 | 4 | `op_flags` |
+/// | 4 | 4 | `nr_sectors` |
+/// | 8 | 8 | `start_sector` |
 /// | 16 | 8 | addr |
 ///
 /// ## Zero-Copy Design
@@ -277,7 +277,7 @@ impl UblkIoDesc {
         }
     }
 
-    /// Get the operation type (lower 8 bits of op_flags).
+    /// Get the operation type (lower 8 bits of `op_flags`).
     #[must_use]
     pub const fn op(&self) -> u32 {
         self.op_flags & 0xFF
@@ -289,7 +289,7 @@ impl UblkIoDesc {
         self.op_flags & !0xFF
     }
 
-    /// Get the full op_flags field.
+    /// Get the full `op_flags` field.
     #[must_use]
     pub const fn op_flags(&self) -> u32 {
         self.op_flags
@@ -367,8 +367,8 @@ impl Default for UblkIoDesc {
 
 /// ublk I/O command structure.
 ///
-/// Used to communicate I/O results back to the kernel via io_uring.
-/// Embedded in the io_uring SQE for URING_CMD operations.
+/// Used to communicate I/O results back to the kernel via `io_uring`.
+/// Embedded in the `io_uring` SQE for `URING_CMD` operations.
 ///
 /// ## Layout (16 bytes total)
 ///

@@ -228,7 +228,7 @@ impl VmConfigBuilder {
 // VCPU REGISTERS (x86_64)
 // ============================================================================
 
-/// x86_64 general-purpose registers
+/// `x86_64` general-purpose registers
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct VcpuRegs {
@@ -270,7 +270,7 @@ pub struct VcpuRegs {
     pub rflags: u64,
 }
 
-/// x86_64 segment register
+/// `x86_64` segment register
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct Segment {
@@ -302,7 +302,7 @@ pub struct Segment {
     pub padding: u8,
 }
 
-/// x86_64 descriptor table register
+/// `x86_64` descriptor table register
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct Dtable {
@@ -314,7 +314,7 @@ pub struct Dtable {
     pub padding: [u16; 3],
 }
 
-/// x86_64 special registers
+/// `x86_64` special registers
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct VcpuSregs {
@@ -440,7 +440,12 @@ pub struct MemoryRegion {
 impl MemoryRegion {
     /// Create a new memory region
     #[must_use]
-    pub const fn new(slot: u32, guest_phys_addr: u64, memory_size: u64, userspace_addr: u64) -> Self {
+    pub const fn new(
+        slot: u32,
+        guest_phys_addr: u64,
+        memory_size: u64,
+        userspace_addr: u64,
+    ) -> Self {
         Self {
             slot,
             guest_phys_addr,
@@ -540,7 +545,7 @@ impl std::fmt::Debug for Vcpu {
 // MICROVM (std only)
 // ============================================================================
 
-/// Lightweight MicroVM
+/// Lightweight `MicroVM`
 #[cfg(feature = "std")]
 pub struct MicroVm {
     /// Configuration
@@ -559,7 +564,7 @@ pub struct MicroVm {
 
 #[cfg(feature = "std")]
 impl MicroVm {
-    /// Create a new MicroVM
+    /// Create a new `MicroVM`
     pub fn create(config: VmConfig) -> Result<Self> {
         config.validate()?;
 
@@ -946,11 +951,7 @@ mod tests {
 
     #[test]
     fn test_microvm_create() {
-        let config = VmConfig::builder()
-            .vcpus(2)
-            .memory_mb(256)
-            .build()
-            .unwrap();
+        let config = VmConfig::builder().vcpus(2).memory_mb(256).build().unwrap();
 
         let vm = MicroVm::create(config).unwrap();
         assert_eq!(vm.vcpu_count(), 2);

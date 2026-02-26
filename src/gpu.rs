@@ -237,6 +237,7 @@ pub struct Buffer {
 #[cfg(feature = "std")]
 impl Buffer {
     /// Create a new buffer
+    #[must_use]
     pub fn new(id: u64, size: u64, usage: BufferUsage) -> Self {
         Self {
             id,
@@ -247,6 +248,7 @@ impl Buffer {
     }
 
     /// Create with initial data
+    #[must_use]
     pub fn with_data(id: u64, data: &[u8], usage: BufferUsage) -> Self {
         Self {
             id,
@@ -405,6 +407,7 @@ pub struct GpuDevice {
 #[cfg(feature = "std")]
 impl GpuDevice {
     /// Create a mock device (for testing without real GPU)
+    #[must_use]
     pub fn mock() -> Self {
         Self {
             info: GpuDeviceInfo::default(),
@@ -552,6 +555,7 @@ pub struct ComputePipeline {
 #[cfg(feature = "std")]
 impl ComputePipeline {
     /// Create a new compute pipeline
+    #[must_use]
     pub fn new(shader: ComputeShader) -> Self {
         Self {
             shader: Arc::new(shader),
@@ -764,7 +768,9 @@ mod tests {
     #[test]
     fn test_gpu_device_create_buffer_uninit() {
         let device = GpuDevice::mock();
-        let buffer = device.create_buffer_uninit(1024, BufferUsage::STORAGE).unwrap();
+        let buffer = device
+            .create_buffer_uninit(1024, BufferUsage::STORAGE)
+            .unwrap();
         assert_eq!(buffer.size(), 1024);
     }
 

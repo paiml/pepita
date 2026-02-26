@@ -473,11 +473,7 @@ pub trait BlockOps: Send + Sync {
     /// # Returns
     ///
     /// Ok(()) if the request was queued, or an error.
-    fn queue_rq(
-        queue_data: &Self::QueueData,
-        request: &Request,
-        is_last: bool,
-    ) -> Result<()>;
+    fn queue_rq(queue_data: &Self::QueueData, request: &Request, is_last: bool) -> Result<()>;
 
     /// Commit outstanding requests.
     ///

@@ -1,0 +1,11 @@
+{
+  "direct_count": 0,
+  "transitive_count": 1,
+  "timestamp": "2026-02-21T20:41:51.096482668+00:00",
+  "previous": {
+    "direct_count": 0,
+    "transitive_count": 1,
+    "timestamp": "2026-02-21T20:36:54.434232760+00:00",
+    "previous": null
+  }
+}

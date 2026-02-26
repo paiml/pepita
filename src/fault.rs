@@ -98,7 +98,7 @@ impl RetryPolicy {
         }
 
         let base_delay = self.initial_delay.as_millis() as u64;
-        let factor = self.backoff_factor.pow(attempt.saturating_sub(1)) as u64;
+        let factor = u64::from(self.backoff_factor.pow(attempt.saturating_sub(1)));
         let delay_ms = base_delay.saturating_mul(factor);
 
         let capped_ms = delay_ms.min(self.max_delay.as_millis() as u64);
@@ -322,11 +322,7 @@ impl FailureDetector {
     /// Create a new failure detector.
     #[must_use]
     pub fn new() -> Self {
-        Self::with_config(
-            Duration::from_secs(1),
-            Duration::from_secs(3),
-            3,
-        )
+        Self::with_config(Duration::from_secs(1), Duration::from_secs(3), 3)
     }
 
     /// Create with custom configuration.
@@ -384,8 +380,7 @@ impl FailureDetector {
         let workers = self.workers.read().unwrap();
         workers
             .get(&worker_id)
-            .map(|h| h.status)
-            .unwrap_or(HealthStatus::Unknown)
+            .map_or(HealthStatus::Unknown, |h| h.status)
     }
 
     /// Get worker health record.

@@ -4,6 +4,14 @@
 [![Zero C/C++](https://img.shields.io/badge/C%2FC%2B%2B-0%25-blue.svg)](#)
 [![Tests](https://img.shields.io/badge/tests-417%20passing-green.svg)](#)
 
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [License](#license)
+
+
 **Pepita** is a pure Rust library providing minimal kernel interfaces and distributed computing primitives for Sovereign AI workloads. It combines low-level Linux kernel interfaces (`ublk`, `io_uring`, `blk-mq`) with high-level infrastructure (`scheduler`, `executor`, `vmm`, `simd`, `gpu`).
 
 ## Design Principles (Iron Lotus Framework)
@@ -19,6 +27,22 @@
 ```toml
 [dependencies]
 pepita = { path = "../pepita" }
+```
+
+
+## Usage
+
+```rust
+use pepita::scheduler::Scheduler;
+use pepita::task::{Task, Priority};
+
+// Create a work-stealing scheduler with 4 workers
+let scheduler = Scheduler::new(4);
+
+// Submit a task
+let task = Task::new("compute")
+    .with_priority(Priority::High);
+scheduler.submit(task);
 ```
 
 ## Module Overview
@@ -276,6 +300,15 @@ let executor = MicroVmExecutor::new(config)?; // Uses pepita::vmm internally
 running 417 tests
 test result: ok. 417 passed; 0 failed; 0 ignored
 ```
+
+## Contributing
+
+Contributions are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) guide for details.
+
+
+## MSRV
+
+Minimum Supported Rust Version: **1.75**
 
 ## License
 

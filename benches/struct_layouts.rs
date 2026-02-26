@@ -24,12 +24,7 @@ fn bench_struct_construction(c: &mut Criterion) {
 
     group.bench_function("UblkIoDesc::new", |b| {
         b.iter(|| {
-            let desc = UblkIoDesc::new(
-                black_box(0),
-                black_box(1),
-                black_box(0),
-                black_box(8),
-            );
+            let desc = UblkIoDesc::new(black_box(0), black_box(1), black_box(0), black_box(8));
             black_box(desc)
         });
     });
@@ -55,11 +50,7 @@ fn bench_struct_construction(c: &mut Criterion) {
 
     group.bench_function("Request::new", |b| {
         b.iter(|| {
-            let req = Request::new(
-                black_box(0),
-                black_box(0),
-                black_box(RequestOp::Read),
-            );
+            let req = Request::new(black_box(0), black_box(0), black_box(RequestOp::Read));
             black_box(req)
         });
     });

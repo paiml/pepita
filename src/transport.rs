@@ -1,7 +1,7 @@
 //! Message transport for distributed task execution.
 //!
 //! This module provides message types and transport abstractions
-//! inspired by ZeroMQ patterns (REQ/REP, PUSH/PULL, PUB/SUB).
+//! inspired by `ZeroMQ` patterns (REQ/REP, PUSH/PULL, PUB/SUB).
 //!
 //! ## Protocol
 //!
@@ -242,15 +242,12 @@ impl TaskResultPayload {
         });
 
         // Exit code (5 bytes: 1 present flag + 4 value)
-        match self.exit_code {
-            Some(code) => {
-                bytes.push(1);
-                bytes.extend_from_slice(&code.to_be_bytes());
-            }
-            None => {
-                bytes.push(0);
-                bytes.extend_from_slice(&[0u8; 4]);
-            }
+        if let Some(code) = self.exit_code {
+            bytes.push(1);
+            bytes.extend_from_slice(&code.to_be_bytes());
+        } else {
+            bytes.push(0);
+            bytes.extend_from_slice(&[0u8; 4]);
         }
 
         // Duration (8 bytes)
@@ -293,7 +290,9 @@ impl TaskResultPayload {
         };
 
         let exit_code = if bytes[9] == 1 {
-            Some(i32::from_be_bytes([bytes[10], bytes[11], bytes[12], bytes[13]]))
+            Some(i32::from_be_bytes([
+                bytes[10], bytes[11], bytes[12], bytes[13],
+            ]))
         } else {
             None
         };
@@ -486,7 +485,10 @@ impl Message {
     /// Create a task cancel message.
     #[must_use]
     pub fn task_cancel(task_id: TaskId) -> Self {
-        Self::new(MessageType::TaskCancel, task_id.as_u64().to_be_bytes().to_vec())
+        Self::new(
+            MessageType::TaskCancel,
+            task_id.as_u64().to_be_bytes().to_vec(),
+        )
     }
 
     /// Get the message type.
@@ -562,8 +564,7 @@ impl Message {
             return Err(KernelError::InvalidRequest);
         }
 
-        let msg_type =
-            MessageType::from_u8(bytes[4]).ok_or(KernelError::InvalidRequest)?;
+        let msg_type = MessageType::from_u8(bytes[4]).ok_or(KernelError::InvalidRequest)?;
 
         let payload = bytes[5..4 + total_len].to_vec();
 
@@ -684,16 +685,18 @@ mod tests {
 
     #[test]
     fn test_task_result_payload_with_exit_code() {
-        let payload = TaskResultPayload::new(TaskId::new(1), TaskState::Failed, Duration::from_secs(1))
-            .with_exit_code(1);
+        let payload =
+            TaskResultPayload::new(TaskId::new(1), TaskState::Failed, Duration::from_secs(1))
+                .with_exit_code(1);
 
         assert_eq!(payload.exit_code, Some(1));
     }
 
     #[test]
     fn test_task_result_payload_with_error() {
-        let payload = TaskResultPayload::new(TaskId::new(1), TaskState::Failed, Duration::from_secs(1))
-            .with_error("Task failed");
+        let payload =
+            TaskResultPayload::new(TaskId::new(1), TaskState::Failed, Duration::from_secs(1))
+                .with_error("Task failed");
 
         assert_eq!(payload.error, Some("Task failed".to_string()));
     }
@@ -789,8 +792,8 @@ mod tests {
 
         let payload = msg.payload();
         let task_id = u64::from_be_bytes([
-            payload[0], payload[1], payload[2], payload[3],
-            payload[4], payload[5], payload[6], payload[7],
+            payload[0], payload[1], payload[2], payload[3], payload[4], payload[5], payload[6],
+            payload[7],
         ]);
         assert_eq!(task_id, 12345);
     }

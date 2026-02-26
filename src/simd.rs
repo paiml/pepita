@@ -1,7 +1,7 @@
 //! SIMD: Vectorized Operations
 //!
 //! Pure Rust SIMD operations with runtime CPU feature detection.
-//! Supports AVX-512, AVX2, SSE4.2 on x86_64 and NEON on aarch64.
+//! Supports AVX-512, AVX2, SSE4.2 on `x86_64` and NEON on aarch64.
 //!
 //! ## Example
 //!
@@ -319,7 +319,7 @@ impl SimdOps {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512f")]
     unsafe fn vadd_f32_avx512(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm512_add_ps, _mm512_loadu_ps, _mm512_storeu_ps};
 
         let chunks = a.len() / 16;
         for i in 0..chunks {
@@ -340,7 +340,7 @@ impl SimdOps {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512f")]
     unsafe fn vadd_f64_avx512(&self, a: &[f64], b: &[f64], c: &mut [f64]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm512_add_pd, _mm512_loadu_pd, _mm512_storeu_pd};
 
         let chunks = a.len() / 8;
         for i in 0..chunks {
@@ -360,7 +360,7 @@ impl SimdOps {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512f")]
     unsafe fn vmul_f32_avx512(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm512_loadu_ps, _mm512_mul_ps, _mm512_storeu_ps};
 
         let chunks = a.len() / 16;
         for i in 0..chunks {
@@ -384,7 +384,7 @@ impl SimdOps {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
     unsafe fn vadd_f32_avx2(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm256_add_ps, _mm256_loadu_ps, _mm256_storeu_ps};
 
         let chunks = a.len() / 8;
         for i in 0..chunks {
@@ -404,7 +404,7 @@ impl SimdOps {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
     unsafe fn vadd_f64_avx2(&self, a: &[f64], b: &[f64], c: &mut [f64]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm256_add_pd, _mm256_loadu_pd, _mm256_storeu_pd};
 
         let chunks = a.len() / 4;
         for i in 0..chunks {
@@ -424,7 +424,7 @@ impl SimdOps {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
     unsafe fn vmul_f32_avx2(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm256_loadu_ps, _mm256_mul_ps, _mm256_storeu_ps};
 
         let chunks = a.len() / 8;
         for i in 0..chunks {
@@ -444,7 +444,11 @@ impl SimdOps {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
     unsafe fn dot_f32_avx2(&self, a: &[f32], b: &[f32]) -> f32 {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{
+            _mm256_add_ps, _mm256_castps256_ps128, _mm256_extractf128_ps, _mm256_loadu_ps,
+            _mm256_mul_ps, _mm256_setzero_ps, _mm_add_ps, _mm_add_ss, _mm_cvtss_f32, _mm_movehl_ps,
+            _mm_shuffle_ps,
+        };
 
         let mut sum = _mm256_setzero_ps();
         let chunks = a.len() / 8;
@@ -458,10 +462,7 @@ impl SimdOps {
         }
 
         // Horizontal sum
-        let sum128 = _mm_add_ps(
-            _mm256_castps256_ps128(sum),
-            _mm256_extractf128_ps(sum, 1),
-        );
+        let sum128 = _mm_add_ps(_mm256_castps256_ps128(sum), _mm256_extractf128_ps(sum, 1));
         let sum64 = _mm_add_ps(sum128, _mm_movehl_ps(sum128, sum128));
         let sum32 = _mm_add_ss(sum64, _mm_shuffle_ps(sum64, sum64, 1));
         let mut result = _mm_cvtss_f32(sum32);
@@ -482,7 +483,7 @@ impl SimdOps {
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "sse4.2")]
     unsafe fn vadd_f32_sse(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm_add_ps, _mm_loadu_ps, _mm_storeu_ps};
 
         let chunks = a.len() / 4;
         for i in 0..chunks {
@@ -560,15 +561,7 @@ impl MatrixOps {
     /// A: m x k matrix
     /// B: k x n matrix
     /// C: m x n matrix
-    pub fn matmul_f32(
-        &self,
-        a: &[f32],
-        b: &[f32],
-        c: &mut [f32],
-        m: usize,
-        k: usize,
-        n: usize,
-    ) {
+    pub fn matmul_f32(&self, a: &[f32], b: &[f32], c: &mut [f32], m: usize, k: usize, n: usize) {
         assert_eq!(a.len(), m * k);
         assert_eq!(b.len(), k * n);
         assert_eq!(c.len(), m * n);

@@ -201,17 +201,14 @@ impl Pool {
     fn from_config(config: PoolConfig) -> Result<Self> {
         let cpu_workers = if config.cpu_workers == 0 {
             std::thread::available_parallelism()
-                .map(|p| p.get())
+                .map(std::num::NonZero::get)
                 .unwrap_or(4)
         } else {
             config.cpu_workers
         };
 
         // Create scheduler
-        let scheduler = Arc::new(Scheduler::with_capacity(
-            cpu_workers,
-            config.queue_capacity,
-        ));
+        let scheduler = Arc::new(Scheduler::with_capacity(cpu_workers, config.queue_capacity));
 
         // Create executor registry
         let mut executors = ExecutorRegistry::new();
@@ -277,9 +274,7 @@ impl Pool {
 
                     // Check if we should retry
                     if retry_state.should_retry(&self.config.retry_policy) {
-                        retry_state.record_failure(
-                            exec_result.error.clone().unwrap_or_default(),
-                        );
+                        retry_state.record_failure(exec_result.error.clone().unwrap_or_default());
                         self.total_retries.fetch_add(1, Ordering::Relaxed);
                         current_task.increment_retry();
 
@@ -297,7 +292,7 @@ impl Pool {
                 Err(e) => {
                     // Check if retriable error
                     if e.is_retriable() && retry_state.should_retry(&self.config.retry_policy) {
-                        retry_state.record_failure(format!("{}", e));
+                        retry_state.record_failure(format!("{e}"));
                         self.total_retries.fetch_add(1, Ordering::Relaxed);
                         current_task.increment_retry();
 
@@ -455,9 +450,7 @@ mod tests {
     fn test_pool_submit_echo() {
         let pool = Pool::builder().cpu_workers(2).build().unwrap();
 
-        let task = Task::binary("echo")
-            .args(vec!["Hello, Pool!"])
-            .build();
+        let task = Task::binary("echo").args(vec!["Hello, Pool!"]).build();
 
         let result = pool.submit(task).unwrap();
         assert!(result.is_success());
@@ -469,7 +462,9 @@ mod tests {
         let pool = Pool::builder().cpu_workers(4).build().unwrap();
 
         for i in 0..10 {
-            let task = Task::binary("echo").args(vec![format!("Task {}", i)]).build();
+            let task = Task::binary("echo")
+                .args(vec![format!("Task {}", i)])
+                .build();
             let result = pool.submit(task).unwrap();
             assert!(result.is_success());
         }
