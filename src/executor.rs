@@ -53,6 +53,10 @@ pub trait Executor: Send + Sync {
     fn can_execute(&self, task: &Task) -> bool;
 
     /// Execute a task synchronously.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     fn execute_sync(&self, task: &Task) -> Result<ExecutionResult>;
 
     /// Get the number of available workers.
@@ -109,7 +113,7 @@ impl CpuExecutor {
     pub fn default_workers() -> Self {
         // Use available parallelism or default to 4
         let num_workers = std::thread::available_parallelism()
-            .map(|p| p.get())
+            .map(std::num::NonZero::get)
             .unwrap_or(4);
         Self::new(num_workers)
     }
@@ -152,6 +156,7 @@ impl CpuExecutor {
         result
     }
 
+    #[allow(clippy::too_many_lines)]
     fn run_binary_internal(
         &self,
         task: &BinaryTask,
@@ -273,7 +278,7 @@ impl CpuExecutor {
             error: if success {
                 None
             } else {
-                Some(format!("Exit code: {:?}", exit_code))
+                Some(format!("Exit code: {exit_code:?}"))
             },
         })
     }
@@ -328,7 +333,7 @@ impl Executor for CpuExecutor {
                             output_buffers: Vec::new(),
                             duration: start.elapsed(),
                             state: TaskState::Failed,
-                            error: Some(format!("Pipeline stage {} failed", idx)),
+                            error: Some(format!("Pipeline stage {idx} failed")),
                         });
                     }
 
@@ -459,6 +464,10 @@ impl RemoteExecutor {
     }
 
     /// Connect to remote workers.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn connect(&self) -> Result<()> {
         // Would establish TCP connections
         self.connected.store(true, Ordering::Release);
@@ -531,6 +540,10 @@ impl ExecutorRegistry {
     }
 
     /// Execute a task on the appropriate backend.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn execute(&self, task: &Task) -> Result<ExecutionResult> {
         let executor = self.find_executor(task).ok_or(KernelError::NotSupported)?;
         executor.execute_sync(task)

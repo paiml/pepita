@@ -1,6 +1,6 @@
-//! io_uring kernel interface.
+//! `io_uring` kernel interface.
 //!
-//! This module provides Rust types that match the Linux kernel's io_uring
+//! This module provides Rust types that match the Linux kernel's `io_uring`
 //! interface exactly, as defined in `include/uapi/linux/io_uring.h`.
 //!
 //! ## ABI Compatibility
@@ -167,7 +167,7 @@ pub const IORING_OP_SETXATTR: u8 = 44;
 /// Socket operation
 pub const IORING_OP_SOCKET: u8 = 45;
 
-/// URING_CMD passthrough (used by ublk)
+/// `URING_CMD` passthrough (used by ublk)
 pub const IORING_OP_URING_CMD: u8 = 46;
 
 /// Send to socket with zerocopy
@@ -221,7 +221,7 @@ pub const IORING_CQE_F_NOTIF: u32 = 1 << 3;
 // SUBMISSION QUEUE ENTRY (64 bytes)
 // ============================================================================
 
-/// io_uring Submission Queue Entry (SQE).
+/// `io_uring` Submission Queue Entry (SQE).
 ///
 /// This structure is exactly 64 bytes to match the kernel ABI.
 /// Used to submit I/O operations to the kernel.
@@ -243,11 +243,11 @@ pub const IORING_CQE_F_NOTIF: u32 = 1 << 3;
 /// | 42 | 2 | personality |
 /// | 44 | 4 | splice_fd_in |
 /// | 48 | 8 | addr3 |
-/// | 56 | 8 | __pad2 |
+/// | 56 | 8 | pad2 |
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IoUringSqe {
-    /// Operation code (IORING_OP_*)
+    /// Operation code (`IORING_OP`_*)
     pub opcode: u8,
     /// SQE flags (IOSQE_*)
     pub flags: u8,
@@ -274,7 +274,7 @@ pub struct IoUringSqe {
     /// Third address field
     pub addr3: u64,
     /// Padding to 64 bytes
-    pub __pad2: [u64; 1],
+    pub pad2: [u64; 1],
 }
 
 impl IoUringSqe {
@@ -295,7 +295,7 @@ impl IoUringSqe {
             personality: 0,
             splice_fd_in: 0,
             addr3: 0,
-            __pad2: [0],
+            pad2: [0],
         }
     }
 
@@ -308,7 +308,7 @@ impl IoUringSqe {
         sqe
     }
 
-    /// Create an SQE for URING_CMD (ublk passthrough).
+    /// Create an SQE for `URING_CMD` (ublk passthrough).
     ///
     /// # Arguments
     ///
@@ -366,7 +366,7 @@ impl IoUringSqe {
         self.flags |= IOSQE_FIXED_FILE;
     }
 
-    /// Check if this is a URING_CMD operation.
+    /// Check if this is a `URING_CMD` operation.
     #[must_use]
     pub const fn is_uring_cmd(&self) -> bool {
         self.opcode == IORING_OP_URING_CMD
@@ -389,7 +389,7 @@ impl Default for IoUringSqe {
 // COMPLETION QUEUE ENTRY (16 bytes)
 // ============================================================================
 
-/// io_uring Completion Queue Entry (CQE).
+/// `io_uring` Completion Queue Entry (CQE).
 ///
 /// This structure is exactly 16 bytes to match the kernel ABI.
 /// Returned by the kernel when an operation completes.
@@ -451,6 +451,7 @@ impl IoUringCqe {
     ///
     /// Returns `None` if operation failed.
     #[must_use]
+    #[allow(clippy::cast_sign_loss)]
     pub const fn result(&self) -> Option<u32> {
         if self.res >= 0 {
             Some(self.res as u32)

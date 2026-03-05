@@ -93,10 +93,9 @@ impl CpuAffinity {
     #[must_use]
     pub fn allows_core(&self, core: usize) -> bool {
         match self {
-            Self::Any => true,
+            Self::Any | Self::NumaNode(_) => true, // NumaNode simplified, would need topology info
             Self::Core(c) => *c == core,
             Self::Cores(cores) => cores.contains(&core),
-            Self::NumaNode(_) => true, // Simplified, would need topology info
         }
     }
 }

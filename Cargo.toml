@@ -2,7 +2,7 @@
 name = "pepita"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.93"
 authors = ["Pragmatic AI Labs <info@paiml.com>"]
 description = "Tiny First-Principles Rust Kernel for Sovereign AI - io_uring/ublk/blk-mq interfaces"
 license = "MIT OR Apache-2.0"

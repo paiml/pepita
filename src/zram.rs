@@ -174,6 +174,7 @@ pub struct ZramStats {
 impl ZramStats {
     /// Calculate compression ratio
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn compression_ratio(&self) -> f64 {
         if self.compr_data_size == 0 {
             return 1.0;
@@ -183,6 +184,7 @@ impl ZramStats {
 
     /// Calculate memory efficiency
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn memory_efficiency(&self) -> f64 {
         if self.mem_used_total == 0 {
             return 1.0;
@@ -295,8 +297,10 @@ impl AtomicStats {
 /// Entry in the page table
 #[cfg(feature = "std")]
 #[derive(Debug, Clone)]
+#[derive(Default)]
 pub enum PageEntry {
     /// Empty slot (not yet written)
+    #[default]
     Empty,
     /// Zero-filled page (no data stored)
     Zero,
@@ -320,26 +324,19 @@ pub enum PageEntry {
 #[cfg(feature = "std")]
 impl PageEntry {
     /// Get the memory size of this entry
+    #[must_use] 
     pub fn memory_size(&self) -> usize {
         match self {
-            Self::Empty => 0,
-            Self::Zero => 0,
+            Self::Empty | Self::Zero => 0,
             Self::Same { .. } => 1,
-            Self::Compressed { data } => data.len(),
-            Self::Uncompressed { data } => data.len(),
+            Self::Compressed { data } | Self::Uncompressed { data } => data.len(),
         }
     }
 
     /// Check if this is an empty entry
+    #[must_use] 
     pub const fn is_empty(&self) -> bool {
         matches!(self, Self::Empty)
-    }
-}
-
-#[cfg(feature = "std")]
-impl Default for PageEntry {
-    fn default() -> Self {
-        Self::Empty
     }
 }
 
@@ -358,6 +355,7 @@ pub struct PageTable {
 #[cfg(feature = "std")]
 impl PageTable {
     /// Create a new page table
+    #[must_use] 
     pub fn new() -> Self {
         Self {
             entries: RwLock::new(HashMap::new()),
@@ -365,6 +363,10 @@ impl PageTable {
     }
 
     /// Get a page entry
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn get(&self, page_index: u64) -> Result<PageEntry> {
         let entries = self.entries.read().map_err(|_| KernelError::ResourceBusy)?;
         Ok(entries
@@ -374,6 +376,10 @@ impl PageTable {
     }
 
     /// Set a page entry
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn set(&self, page_index: u64, entry: PageEntry) -> Result<()> {
         let mut entries = self
             .entries
@@ -384,6 +390,10 @@ impl PageTable {
     }
 
     /// Remove a page entry
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn remove(&self, page_index: u64) -> Result<Option<PageEntry>> {
         let mut entries = self
             .entries
@@ -424,19 +434,28 @@ pub struct CompressionStream {
 #[cfg(feature = "std")]
 impl CompressionStream {
     /// Create a new compression stream
+    #[must_use] 
     pub fn new(compressor: ZramCompressor) -> Self {
         Self { compressor }
     }
 
     /// Compress data using configured algorithm
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn compress(&mut self, input: &[u8]) -> Result<Vec<u8>> {
         match self.compressor {
-            ZramCompressor::Lz4 => self.compress_lz4(input),
+            ZramCompressor::Lz4 => Ok(self.compress_lz4(input)),
             ZramCompressor::None => Ok(input.to_vec()),
         }
     }
 
     /// Decompress data using configured algorithm
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn decompress(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize> {
         match self.compressor {
             ZramCompressor::Lz4 => self.decompress_lz4(input, output),
@@ -463,14 +482,15 @@ impl CompressionStream {
     // Token byte: [4 bits literal len][4 bits match len]
 
     /// LZ4 compress
-    fn compress_lz4(&mut self, input: &[u8]) -> Result<Vec<u8>> {
+    #[allow(clippy::cast_possible_truncation)]
+    fn compress_lz4(&mut self, input: &[u8]) -> Vec<u8> {
         if input.is_empty() {
-            return Ok(Vec::new());
+            return Vec::new();
         }
 
         // For very small inputs, don't compress
         if input.len() < 16 {
-            return Ok(input.to_vec());
+            return input.to_vec();
         }
 
         let mut output = Vec::with_capacity(input.len());
@@ -523,13 +543,14 @@ impl CompressionStream {
 
         // If compression didn't help, return original
         if output.len() >= input.len() {
-            return Ok(input.to_vec());
+            return input.to_vec();
         }
 
-        Ok(output)
+        output
     }
 
     /// Emit a complete LZ4 sequence: token + literals + offset + match
+    #[allow(clippy::unused_self, clippy::cast_possible_truncation)]
     fn lz4_emit_sequence(
         &self,
         output: &mut Vec<u8>,
@@ -577,6 +598,7 @@ impl CompressionStream {
     }
 
     /// Emit literals only (for final block with no match)
+    #[allow(clippy::unused_self, clippy::cast_possible_truncation)]
     fn lz4_emit_literals_only(&self, output: &mut Vec<u8>, literals: &[u8]) {
         let literal_len = literals.len();
 
@@ -599,6 +621,7 @@ impl CompressionStream {
     }
 
     /// LZ4 decompress
+    #[allow(clippy::unused_self)]
     fn decompress_lz4(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize> {
         if input.is_empty() {
             return Ok(0);
@@ -683,12 +706,13 @@ impl CompressionStream {
     }
 
     /// LZ4 hash function
+    #[allow(clippy::unused_self)]
     fn lz4_hash(&self, data: &[u8]) -> u32 {
         if data.len() < 4 {
             return 0;
         }
         let v = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
-        v.wrapping_mul(2654435761) >> 20
+        v.wrapping_mul(2_654_435_761) >> 20
     }
 }
 
@@ -712,6 +736,10 @@ pub struct ZramDevice {
 #[cfg(feature = "std")]
 impl ZramDevice {
     /// Create a new zram device
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn new(config: ZramConfig) -> Result<Self> {
         let stream = CompressionStream::new(config.compressor);
 
@@ -734,6 +762,10 @@ impl ZramDevice {
     }
 
     /// Read a page
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn read_page(&self, page_index: u64, buffer: &mut [u8]) -> Result<()> {
         if buffer.len() < PAGE_SIZE {
             return Err(KernelError::InvalidArgument);
@@ -778,6 +810,10 @@ impl ZramDevice {
     }
 
     /// Write a page
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn write_page(&self, page_index: u64, data: &[u8]) -> Result<()> {
         if data.len() < PAGE_SIZE {
             return Err(KernelError::InvalidArgument);
@@ -831,6 +867,10 @@ impl ZramDevice {
     }
 
     /// Discard a page (TRIM)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn discard_page(&self, page_index: u64) -> Result<()> {
         if page_index >= self.config.max_pages() {
             return Err(KernelError::InvalidArgument);
@@ -858,6 +898,10 @@ impl ZramDevice {
     }
 
     /// Reset the device (clear all data)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn reset(&self) -> Result<()> {
         // Clear page table by removing all entries
         for i in 0..self.config.max_pages() {
@@ -874,7 +918,7 @@ impl std::fmt::Debug for ZramDevice {
             .field("size_bytes", &self.config.size_bytes)
             .field("compressor", &self.config.compressor)
             .field("stored_pages", &self.stored_pages())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 

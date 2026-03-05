@@ -422,6 +422,10 @@ impl TagSetConfig {
     }
 
     /// Validate the configuration.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn validate(&self) -> Result<()> {
         if self.nr_hw_queues == 0 {
             return Err(KernelError::InvalidArgument);
@@ -473,6 +477,10 @@ pub trait BlockOps: Send + Sync {
     /// # Returns
     ///
     /// Ok(()) if the request was queued, or an error.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     fn queue_rq(queue_data: &Self::QueueData, request: &Request, is_last: bool) -> Result<()>;
 
     /// Commit outstanding requests.

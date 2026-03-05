@@ -237,6 +237,8 @@ pub struct Buffer {
 #[cfg(feature = "std")]
 impl Buffer {
     /// Create a new buffer
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn new(id: u64, size: u64, usage: BufferUsage) -> Self {
         Self {
             id,
@@ -247,6 +249,7 @@ impl Buffer {
     }
 
     /// Create with initial data
+    #[must_use] 
     pub fn with_data(id: u64, data: &[u8], usage: BufferUsage) -> Self {
         Self {
             id,
@@ -286,6 +289,10 @@ impl Buffer {
     }
 
     /// Map buffer for reading
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn map_read(&self) -> Result<&[u8]> {
         if !self.usage.contains(BufferUsage::MAP_READ) {
             return Err(KernelError::InvalidRequest);
@@ -294,6 +301,10 @@ impl Buffer {
     }
 
     /// Map buffer for writing
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn map_write(&mut self) -> Result<&mut [u8]> {
         if !self.usage.contains(BufferUsage::MAP_WRITE) {
             return Err(KernelError::InvalidRequest);
@@ -335,6 +346,10 @@ pub struct ComputeShader {
 #[cfg(feature = "std")]
 impl ComputeShader {
     /// Create from WGSL source
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn from_wgsl(source: impl Into<String>) -> Result<Self> {
         static SHADER_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -405,6 +420,7 @@ pub struct GpuDevice {
 #[cfg(feature = "std")]
 impl GpuDevice {
     /// Create a mock device (for testing without real GPU)
+    #[must_use] 
     pub fn mock() -> Self {
         Self {
             info: GpuDeviceInfo::default(),
@@ -415,6 +431,10 @@ impl GpuDevice {
     }
 
     /// Try to get the default device
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn default_device() -> Result<Self> {
         // Mock: return a mock device
         // Real implementation would enumerate adapters
@@ -434,6 +454,10 @@ impl GpuDevice {
     }
 
     /// Create a buffer with data
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn create_buffer(&self, data: &[u8], usage: BufferUsage) -> Result<Buffer> {
         if !self.is_available() {
             return Err(KernelError::DeviceNotReady);
@@ -447,6 +471,10 @@ impl GpuDevice {
     }
 
     /// Create an uninitialized buffer
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn create_buffer_uninit(&self, size: u64, usage: BufferUsage) -> Result<Buffer> {
         if !self.is_available() {
             return Err(KernelError::DeviceNotReady);
@@ -460,6 +488,10 @@ impl GpuDevice {
     }
 
     /// Dispatch a compute shader (mock - performs CPU computation)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn dispatch(
         &self,
         _shader: &ComputeShader,
@@ -492,6 +524,11 @@ impl GpuDevice {
     }
 
     /// Copy buffer to buffer
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn copy_buffer(&self, src: &Buffer, dst: &mut Buffer) -> Result<()> {
         if !self.is_available() {
             return Err(KernelError::DeviceNotReady);
@@ -510,6 +547,10 @@ impl GpuDevice {
     }
 
     /// Submit and wait (mock - immediate)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn submit_and_wait(&self) -> Result<()> {
         if !self.is_available() {
             return Err(KernelError::DeviceNotReady);
@@ -532,7 +573,7 @@ impl std::fmt::Debug for GpuDevice {
             .field("name", &self.info.name)
             .field("backend", &self.info.backend)
             .field("available", &self.is_available())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -552,6 +593,7 @@ pub struct ComputePipeline {
 #[cfg(feature = "std")]
 impl ComputePipeline {
     /// Create a new compute pipeline
+    #[must_use] 
     pub fn new(shader: ComputeShader) -> Self {
         Self {
             shader: Arc::new(shader),
