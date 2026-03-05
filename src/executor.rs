@@ -167,8 +167,16 @@ impl CpuExecutor {
             stderr,
             output_buffers: Vec::new(),
             duration,
-            state: if success { TaskState::Completed } else { TaskState::Failed },
-            error: if success { None } else { Some(format!("Exit code: {exit_code:?}")) },
+            state: if success {
+                TaskState::Completed
+            } else {
+                TaskState::Failed
+            },
+            error: if success {
+                None
+            } else {
+                Some(format!("Exit code: {exit_code:?}"))
+            },
         }
     }
 
@@ -214,18 +222,27 @@ impl CpuExecutor {
             loop {
                 match child.try_wait() {
                     Ok(Some(status)) => {
-                        let out = child.wait_with_output().map_err(|_| KernelError::IoTimeout)?;
+                        let out = child
+                            .wait_with_output()
+                            .map_err(|_| KernelError::IoTimeout)?;
                         return Ok(Self::build_result(
-                            task_id, status.code(), out.stdout, out.stderr,
-                            start.elapsed(), status.success(),
+                            task_id,
+                            status.code(),
+                            out.stdout,
+                            out.stderr,
+                            start.elapsed(),
+                            status.success(),
                         ));
                     }
                     Ok(None) if Instant::now() > deadline => {
                         let _ = child.kill();
                         return Ok(ExecutionResult {
-                            task_id, exit_code: None,
-                            stdout: Vec::new(), stderr: Vec::new(),
-                            output_buffers: Vec::new(), duration: start.elapsed(),
+                            task_id,
+                            exit_code: None,
+                            stdout: Vec::new(),
+                            stderr: Vec::new(),
+                            output_buffers: Vec::new(),
+                            duration: start.elapsed(),
                             state: TaskState::TimedOut,
                             error: Some("Task timed out".to_string()),
                         });
@@ -235,13 +252,19 @@ impl CpuExecutor {
                 }
             }
         } else {
-            child.wait_with_output().map_err(|_| KernelError::IoTimeout)?
+            child
+                .wait_with_output()
+                .map_err(|_| KernelError::IoTimeout)?
         };
 
         let success = output.status.success();
         Ok(Self::build_result(
-            task_id, output.status.code(), output.stdout, output.stderr,
-            start.elapsed(), success,
+            task_id,
+            output.status.code(),
+            output.stdout,
+            output.stderr,
+            start.elapsed(),
+            success,
         ))
     }
 }
