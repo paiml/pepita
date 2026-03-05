@@ -764,7 +764,9 @@ mod tests {
     #[test]
     fn test_gpu_device_create_buffer_uninit() {
         let device = GpuDevice::mock();
-        let buffer = device.create_buffer_uninit(1024, BufferUsage::STORAGE).unwrap();
+        let buffer = device
+            .create_buffer_uninit(1024, BufferUsage::STORAGE)
+            .unwrap();
         assert_eq!(buffer.size(), 1024);
     }
 

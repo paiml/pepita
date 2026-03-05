@@ -277,20 +277,14 @@ impl VirtQueue {
 
     /// Add descriptor index to pending
     pub fn add_pending(&self, desc_idx: u16) -> Result<()> {
-        let mut pending = self
-            .pending
-            .lock()
-            .map_err(|_| KernelError::ResourceBusy)?;
+        let mut pending = self.pending.lock().map_err(|_| KernelError::ResourceBusy)?;
         pending.push(desc_idx);
         Ok(())
     }
 
     /// Pop pending descriptor
     pub fn pop_pending(&self) -> Result<Option<u16>> {
-        let mut pending = self
-            .pending
-            .lock()
-            .map_err(|_| KernelError::ResourceBusy)?;
+        let mut pending = self.pending.lock().map_err(|_| KernelError::ResourceBusy)?;
         Ok(pending.pop())
     }
 
@@ -882,10 +876,7 @@ impl VirtioBlock {
         let offset = (sector * 512) as usize;
         let len = buffer.len();
 
-        let storage = self
-            .storage
-            .read()
-            .map_err(|_| KernelError::ResourceBusy)?;
+        let storage = self.storage.read().map_err(|_| KernelError::ResourceBusy)?;
 
         if offset + len > storage.len() {
             return Err(KernelError::InvalidArgument);

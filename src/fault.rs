@@ -322,11 +322,7 @@ impl FailureDetector {
     /// Create a new failure detector.
     #[must_use]
     pub fn new() -> Self {
-        Self::with_config(
-            Duration::from_secs(1),
-            Duration::from_secs(3),
-            3,
-        )
+        Self::with_config(Duration::from_secs(1), Duration::from_secs(3), 3)
     }
 
     /// Create with custom configuration.

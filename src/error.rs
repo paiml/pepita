@@ -116,31 +116,31 @@ impl KernelError {
     #[must_use]
     pub const fn to_errno(self) -> i32 {
         match self {
-            Self::OutOfMemory => -12,        // ENOMEM
-            Self::InvalidAddress => -14,     // EFAULT
-            Self::AlignmentError => -22,     // EINVAL
-            Self::OverlappingRegion => -22,  // EINVAL
-            Self::IoTimeout => -110,         // ETIMEDOUT
-            Self::DeviceNotReady => -19,     // ENODEV
-            Self::InvalidRequest => -22,     // EINVAL
-            Self::Cancelled => -125,         // ECANCELED
-            Self::UblkQueueFull => -11,      // EAGAIN
-            Self::UblkInvalidTag => -22,     // EINVAL
-            Self::UblkDeviceBusy => -16,     // EBUSY
-            Self::UblkDeviceNotFound => -19, // ENODEV
-            Self::UblkInvalidDeviceId => -22, // EINVAL
-            Self::UblkNotPermitted => -1,    // EPERM
-            Self::IoUringSubmitFull => -11,  // EAGAIN
-            Self::IoUringCqOverflow => -75,  // EOVERFLOW
+            Self::OutOfMemory => -12,          // ENOMEM
+            Self::InvalidAddress => -14,       // EFAULT
+            Self::AlignmentError => -22,       // EINVAL
+            Self::OverlappingRegion => -22,    // EINVAL
+            Self::IoTimeout => -110,           // ETIMEDOUT
+            Self::DeviceNotReady => -19,       // ENODEV
+            Self::InvalidRequest => -22,       // EINVAL
+            Self::Cancelled => -125,           // ECANCELED
+            Self::UblkQueueFull => -11,        // EAGAIN
+            Self::UblkInvalidTag => -22,       // EINVAL
+            Self::UblkDeviceBusy => -16,       // EBUSY
+            Self::UblkDeviceNotFound => -19,   // ENODEV
+            Self::UblkInvalidDeviceId => -22,  // EINVAL
+            Self::UblkNotPermitted => -1,      // EPERM
+            Self::IoUringSubmitFull => -11,    // EAGAIN
+            Self::IoUringCqOverflow => -75,    // EOVERFLOW
             Self::IoUringInvalidOpcode => -22, // EINVAL
-            Self::BlockError => -5,          // EIO
-            Self::NoTagsAvailable => -11,    // EAGAIN
-            Self::InvalidQueueId => -22,     // EINVAL
-            Self::NotSupported => -95,       // EOPNOTSUPP
-            Self::InvalidArgument => -22,    // EINVAL
-            Self::WouldBlock => -11,         // EAGAIN
-            Self::Interrupted => -4,         // EINTR
-            Self::ResourceBusy => -16,       // EBUSY
+            Self::BlockError => -5,            // EIO
+            Self::NoTagsAvailable => -11,      // EAGAIN
+            Self::InvalidQueueId => -22,       // EINVAL
+            Self::NotSupported => -95,         // EOPNOTSUPP
+            Self::InvalidArgument => -22,      // EINVAL
+            Self::WouldBlock => -11,           // EAGAIN
+            Self::Interrupted => -4,           // EINTR
+            Self::ResourceBusy => -16,         // EBUSY
         }
     }
 
