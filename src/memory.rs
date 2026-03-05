@@ -318,12 +318,7 @@ pub struct DmaBuffer {
 impl DmaBuffer {
     /// Create a new DMA buffer descriptor.
     #[must_use]
-    pub const fn new(
-        phys: PhysAddr,
-        virt: VirtAddr,
-        size: usize,
-        direction: DmaDirection,
-    ) -> Self {
+    pub const fn new(phys: PhysAddr, virt: VirtAddr, size: usize, direction: DmaDirection) -> Self {
         Self {
             phys,
             virt,
@@ -560,14 +555,8 @@ mod tests {
 
     #[test]
     fn test_phys_addr_align_up() {
-        assert_eq!(
-            PhysAddr::new(0x1001).page_align_up(),
-            PhysAddr::new(0x2000)
-        );
-        assert_eq!(
-            PhysAddr::new(0x1000).page_align_up(),
-            PhysAddr::new(0x1000)
-        );
+        assert_eq!(PhysAddr::new(0x1001).page_align_up(), PhysAddr::new(0x2000));
+        assert_eq!(PhysAddr::new(0x1000).page_align_up(), PhysAddr::new(0x1000));
     }
 
     #[test]
@@ -694,12 +683,7 @@ mod tests {
 
     #[test]
     fn test_dma_buffer_invalid() {
-        let buf = DmaBuffer::new(
-            PhysAddr::null(),
-            VirtAddr::null(),
-            0,
-            DmaDirection::None,
-        );
+        let buf = DmaBuffer::new(PhysAddr::null(), VirtAddr::null(), 0, DmaDirection::None);
         assert!(!buf.is_valid());
     }
 

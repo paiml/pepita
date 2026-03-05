@@ -135,7 +135,11 @@ impl CpuExecutor {
     }
 
     /// Execute a binary task.
-    fn execute_binary(&self, task: &BinaryTask, timeout: Option<Duration>) -> Result<ExecutionResult> {
+    fn execute_binary(
+        &self,
+        task: &BinaryTask,
+        timeout: Option<Duration>,
+    ) -> Result<ExecutionResult> {
         let start = Instant::now();
         let task_id = TaskId::new(0); // Placeholder, real ID set by scheduler
 
@@ -200,7 +204,9 @@ impl CpuExecutor {
             loop {
                 match child.try_wait() {
                     Ok(Some(status)) => {
-                        let output = child.wait_with_output().map_err(|_| KernelError::IoTimeout)?;
+                        let output = child
+                            .wait_with_output()
+                            .map_err(|_| KernelError::IoTimeout)?;
                         let duration = start.elapsed();
                         return Ok(ExecutionResult {
                             task_id,
@@ -243,7 +249,9 @@ impl CpuExecutor {
                 }
             }
         } else {
-            child.wait_with_output().map_err(|_| KernelError::IoTimeout)?
+            child
+                .wait_with_output()
+                .map_err(|_| KernelError::IoTimeout)?
         };
 
         let duration = start.elapsed();
@@ -519,10 +527,7 @@ impl ExecutorRegistry {
     /// Find an executor for a task.
     #[must_use]
     pub fn find_executor(&self, task: &Task) -> Option<Arc<dyn Executor>> {
-        self.executors
-            .iter()
-            .find(|e| e.can_execute(task))
-            .cloned()
+        self.executors.iter().find(|e| e.can_execute(task)).cloned()
     }
 
     /// Execute a task on the appropriate backend.

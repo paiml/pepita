@@ -440,7 +440,12 @@ pub struct MemoryRegion {
 impl MemoryRegion {
     /// Create a new memory region
     #[must_use]
-    pub const fn new(slot: u32, guest_phys_addr: u64, memory_size: u64, userspace_addr: u64) -> Self {
+    pub const fn new(
+        slot: u32,
+        guest_phys_addr: u64,
+        memory_size: u64,
+        userspace_addr: u64,
+    ) -> Self {
         Self {
             slot,
             guest_phys_addr,
@@ -946,11 +951,7 @@ mod tests {
 
     #[test]
     fn test_microvm_create() {
-        let config = VmConfig::builder()
-            .vcpus(2)
-            .memory_mb(256)
-            .build()
-            .unwrap();
+        let config = VmConfig::builder().vcpus(2).memory_mb(256).build().unwrap();
 
         let vm = MicroVm::create(config).unwrap();
         assert_eq!(vm.vcpu_count(), 2);

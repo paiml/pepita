@@ -458,10 +458,7 @@ impl SimdOps {
         }
 
         // Horizontal sum
-        let sum128 = _mm_add_ps(
-            _mm256_castps256_ps128(sum),
-            _mm256_extractf128_ps(sum, 1),
-        );
+        let sum128 = _mm_add_ps(_mm256_castps256_ps128(sum), _mm256_extractf128_ps(sum, 1));
         let sum64 = _mm_add_ps(sum128, _mm_movehl_ps(sum128, sum128));
         let sum32 = _mm_add_ss(sum64, _mm_shuffle_ps(sum64, sum64, 1));
         let mut result = _mm_cvtss_f32(sum32);
@@ -560,15 +557,7 @@ impl MatrixOps {
     /// A: m x k matrix
     /// B: k x n matrix
     /// C: m x n matrix
-    pub fn matmul_f32(
-        &self,
-        a: &[f32],
-        b: &[f32],
-        c: &mut [f32],
-        m: usize,
-        k: usize,
-        n: usize,
-    ) {
+    pub fn matmul_f32(&self, a: &[f32], b: &[f32], c: &mut [f32], m: usize, k: usize, n: usize) {
         assert_eq!(a.len(), m * k);
         assert_eq!(b.len(), k * n);
         assert_eq!(c.len(), m * n);
