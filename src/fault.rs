@@ -92,13 +92,14 @@ impl RetryPolicy {
 
     /// Calculate delay for a given retry attempt.
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn delay_for_attempt(&self, attempt: u32) -> Duration {
         if attempt == 0 {
             return Duration::ZERO;
         }
 
         let base_delay = self.initial_delay.as_millis() as u64;
-        let factor = self.backoff_factor.pow(attempt.saturating_sub(1)) as u64;
+        let factor = u64::from(self.backoff_factor.pow(attempt.saturating_sub(1)));
         let delay_ms = base_delay.saturating_mul(factor);
 
         let capped_ms = delay_ms.min(self.max_delay.as_millis() as u64);
@@ -287,6 +288,7 @@ impl WorkerHealth {
 
     /// Get success rate.
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn success_rate(&self) -> f64 {
         let total = self.tasks_completed + self.tasks_failed;
         if total == 0 {
@@ -342,18 +344,30 @@ impl FailureDetector {
     }
 
     /// Register a worker.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn register_worker(&self, worker_id: WorkerId) {
         let mut workers = self.workers.write().unwrap();
         workers.insert(worker_id, WorkerHealth::new(worker_id));
     }
 
     /// Deregister a worker.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn deregister_worker(&self, worker_id: WorkerId) {
         let mut workers = self.workers.write().unwrap();
         workers.remove(&worker_id);
     }
 
     /// Record a heartbeat from a worker.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn record_heartbeat(&self, worker_id: WorkerId) {
         let mut workers = self.workers.write().unwrap();
         if let Some(health) = workers.get_mut(&worker_id) {
@@ -367,6 +381,10 @@ impl FailureDetector {
     }
 
     /// Record task completion.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn record_task_result(&self, worker_id: WorkerId, success: bool) {
         let mut workers = self.workers.write().unwrap();
         if let Some(health) = workers.get_mut(&worker_id) {
@@ -375,16 +393,23 @@ impl FailureDetector {
     }
 
     /// Get worker health status.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     #[must_use]
     pub fn get_status(&self, worker_id: WorkerId) -> HealthStatus {
         let workers = self.workers.read().unwrap();
         workers
             .get(&worker_id)
-            .map(|h| h.status)
-            .unwrap_or(HealthStatus::Unknown)
+            .map_or(HealthStatus::Unknown, |h| h.status)
     }
 
     /// Get worker health record.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     #[must_use]
     pub fn get_health(&self, worker_id: WorkerId) -> Option<WorkerHealth> {
         let workers = self.workers.read().unwrap();
@@ -392,6 +417,10 @@ impl FailureDetector {
     }
 
     /// Get all healthy workers.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     #[must_use]
     pub fn healthy_workers(&self) -> Vec<WorkerId> {
         let workers = self.workers.read().unwrap();
@@ -403,6 +432,10 @@ impl FailureDetector {
     }
 
     /// Get all failed workers.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     #[must_use]
     pub fn failed_workers(&self) -> Vec<WorkerId> {
         let workers = self.workers.read().unwrap();
@@ -414,6 +447,10 @@ impl FailureDetector {
     }
 
     /// Update all worker statuses based on heartbeat timeouts.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn update_all_statuses(&self) {
         let mut workers = self.workers.write().unwrap();
         for health in workers.values_mut() {
@@ -501,18 +538,25 @@ impl CircuitBreaker {
     }
 
     /// Get current state.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     #[must_use]
     pub fn state(&self) -> CircuitState {
         *self.state.read().unwrap()
     }
 
     /// Check if circuit allows execution.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     #[must_use]
     pub fn allows_execution(&self) -> bool {
         let state = *self.state.read().unwrap();
         match state {
-            CircuitState::Closed => true,
-            CircuitState::HalfOpen => true,
+            CircuitState::Closed | CircuitState::HalfOpen => true,
             CircuitState::Open => {
                 // Check if we should transition to half-open
                 let opened_at = self.opened_at.read().unwrap();
@@ -529,6 +573,10 @@ impl CircuitBreaker {
     }
 
     /// Record a success.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn record_success(&self) {
         let state = *self.state.read().unwrap();
         match state {
@@ -546,6 +594,10 @@ impl CircuitBreaker {
     }
 
     /// Record a failure.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn record_failure(&self) {
         let state = *self.state.read().unwrap();
         match state {

@@ -1,7 +1,7 @@
 //! SIMD: Vectorized Operations
 //!
 //! Pure Rust SIMD operations with runtime CPU feature detection.
-//! Supports AVX-512, AVX2, SSE4.2 on x86_64 and NEON on aarch64.
+//! Supports AVX-512, AVX2, SSE4.2 on `x86_64` and NEON on aarch64.
 //!
 //! ## Example
 //!
@@ -27,6 +27,7 @@
 
 /// SIMD feature detection (runtime)
 #[derive(Debug, Clone, Copy, Default)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct SimdCapabilities {
     /// SSE4.1 support
     pub sse41: bool,
@@ -91,9 +92,7 @@ impl SimdCapabilities {
             512
         } else if self.avx2 || self.avx {
             256
-        } else if self.sse42 || self.sse41 {
-            128
-        } else if self.neon {
+        } else if self.sse42 || self.sse41 || self.neon {
             128
         } else {
             64 // Scalar
@@ -176,6 +175,10 @@ impl SimdOps {
     // ========================================================================
 
     /// Vector addition: c = a + b (f32)
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn vadd_f32(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
         assert_eq!(a.len(), b.len());
         assert_eq!(a.len(), c.len());
@@ -216,6 +219,10 @@ impl SimdOps {
     }
 
     /// Vector addition: c = a + b (f64)
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn vadd_f64(&self, a: &[f64], b: &[f64], c: &mut [f64]) {
         assert_eq!(a.len(), b.len());
         assert_eq!(a.len(), c.len());
@@ -244,6 +251,10 @@ impl SimdOps {
     // ========================================================================
 
     /// Vector multiplication: c = a * b (f32)
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn vmul_f32(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
         assert_eq!(a.len(), b.len());
         assert_eq!(a.len(), c.len());
@@ -272,6 +283,10 @@ impl SimdOps {
     // ========================================================================
 
     /// Dot product: sum(a[i] * b[i])
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     #[must_use]
     pub fn dot_f32(&self, a: &[f32], b: &[f32]) -> f32 {
         assert_eq!(a.len(), b.len());
@@ -290,24 +305,28 @@ impl SimdOps {
     // SCALAR FALLBACKS
     // ========================================================================
 
+    #[allow(clippy::unused_self)]
     fn vadd_f32_scalar(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
         for i in 0..a.len() {
             c[i] = a[i] + b[i];
         }
     }
 
+    #[allow(clippy::unused_self)]
     fn vadd_f64_scalar(&self, a: &[f64], b: &[f64], c: &mut [f64]) {
         for i in 0..a.len() {
             c[i] = a[i] + b[i];
         }
     }
 
+    #[allow(clippy::unused_self)]
     fn vmul_f32_scalar(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
         for i in 0..a.len() {
             c[i] = a[i] * b[i];
         }
     }
 
+    #[allow(clippy::unused_self)]
     fn dot_f32_scalar(&self, a: &[f32], b: &[f32]) -> f32 {
         a.iter().zip(b.iter()).map(|(x, y)| x * y).sum()
     }
@@ -318,8 +337,9 @@ impl SimdOps {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512f")]
+    #[allow(clippy::unused_self)]
     unsafe fn vadd_f32_avx512(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm512_loadu_ps, _mm512_add_ps, _mm512_storeu_ps};
 
         let chunks = a.len() / 16;
         for i in 0..chunks {
@@ -339,8 +359,9 @@ impl SimdOps {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512f")]
+    #[allow(clippy::unused_self)]
     unsafe fn vadd_f64_avx512(&self, a: &[f64], b: &[f64], c: &mut [f64]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm512_loadu_pd, _mm512_add_pd, _mm512_storeu_pd};
 
         let chunks = a.len() / 8;
         for i in 0..chunks {
@@ -359,8 +380,9 @@ impl SimdOps {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx512f")]
+    #[allow(clippy::unused_self)]
     unsafe fn vmul_f32_avx512(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm512_loadu_ps, _mm512_mul_ps, _mm512_storeu_ps};
 
         let chunks = a.len() / 16;
         for i in 0..chunks {
@@ -383,8 +405,9 @@ impl SimdOps {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
+    #[allow(clippy::unused_self)]
     unsafe fn vadd_f32_avx2(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm256_loadu_ps, _mm256_add_ps, _mm256_storeu_ps};
 
         let chunks = a.len() / 8;
         for i in 0..chunks {
@@ -403,8 +426,9 @@ impl SimdOps {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
+    #[allow(clippy::unused_self)]
     unsafe fn vadd_f64_avx2(&self, a: &[f64], b: &[f64], c: &mut [f64]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm256_loadu_pd, _mm256_add_pd, _mm256_storeu_pd};
 
         let chunks = a.len() / 4;
         for i in 0..chunks {
@@ -423,8 +447,9 @@ impl SimdOps {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
+    #[allow(clippy::unused_self)]
     unsafe fn vmul_f32_avx2(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm256_loadu_ps, _mm256_mul_ps, _mm256_storeu_ps};
 
         let chunks = a.len() / 8;
         for i in 0..chunks {
@@ -443,8 +468,9 @@ impl SimdOps {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "avx2")]
+    #[allow(clippy::unused_self)]
     unsafe fn dot_f32_avx2(&self, a: &[f32], b: &[f32]) -> f32 {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm256_setzero_ps, _mm256_loadu_ps, _mm256_mul_ps, _mm256_add_ps, _mm_add_ps, _mm256_castps256_ps128, _mm256_extractf128_ps, _mm_movehl_ps, _mm_add_ss, _mm_shuffle_ps, _mm_cvtss_f32};
 
         let mut sum = _mm256_setzero_ps();
         let chunks = a.len() / 8;
@@ -478,8 +504,9 @@ impl SimdOps {
 
     #[cfg(target_arch = "x86_64")]
     #[target_feature(enable = "sse4.2")]
+    #[allow(clippy::unused_self)]
     unsafe fn vadd_f32_sse(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
-        use std::arch::x86_64::*;
+        use std::arch::x86_64::{_mm_loadu_ps, _mm_add_ps, _mm_storeu_ps};
 
         let chunks = a.len() / 4;
         for i in 0..chunks {
@@ -501,6 +528,7 @@ impl SimdOps {
     // ========================================================================
 
     #[cfg(target_arch = "aarch64")]
+    #[allow(clippy::unused_self)]
     unsafe fn vadd_f32_neon(&self, a: &[f32], b: &[f32], c: &mut [f32]) {
         use std::arch::aarch64::*;
 
@@ -557,16 +585,21 @@ impl MatrixOps {
     /// A: m x k matrix
     /// B: k x n matrix
     /// C: m x n matrix
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
+    #[allow(clippy::many_single_char_names)]
     pub fn matmul_f32(&self, a: &[f32], b: &[f32], c: &mut [f32], m: usize, k: usize, n: usize) {
+        // Naive O(n^3) with cache-friendly tiling
+        const TILE_SIZE: usize = 32;
+
         assert_eq!(a.len(), m * k);
         assert_eq!(b.len(), k * n);
         assert_eq!(c.len(), m * n);
 
         // Zero output
         c.fill(0.0);
-
-        // Naive O(n^3) with cache-friendly tiling
-        const TILE_SIZE: usize = 32;
 
         for i0 in (0..m).step_by(TILE_SIZE) {
             let i_end = (i0 + TILE_SIZE).min(m);
@@ -590,6 +623,10 @@ impl MatrixOps {
     }
 
     /// Matrix transpose
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn transpose_f32(&self, src: &[f32], dst: &mut [f32], rows: usize, cols: usize) {
         assert_eq!(src.len(), rows * cols);
         assert_eq!(dst.len(), rows * cols);

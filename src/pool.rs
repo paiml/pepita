@@ -125,8 +125,12 @@ impl PoolBuilder {
     }
 
     /// Build the pool.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn build(self) -> Result<Pool> {
-        Pool::from_config(self.config)
+        Ok(Pool::from_config(self.config))
     }
 }
 
@@ -152,6 +156,7 @@ pub struct PoolStats {
 impl PoolStats {
     /// Get success rate.
     #[must_use]
+    #[allow(clippy::cast_precision_loss)]
     pub fn success_rate(&self) -> f64 {
         let total = self.tasks_completed + self.tasks_failed;
         if total == 0 {
@@ -198,10 +203,10 @@ impl Pool {
     }
 
     /// Create a pool from configuration.
-    fn from_config(config: PoolConfig) -> Result<Self> {
+    fn from_config(config: PoolConfig) -> Self {
         let cpu_workers = if config.cpu_workers == 0 {
             std::thread::available_parallelism()
-                .map(|p| p.get())
+                .map(std::num::NonZero::get)
                 .unwrap_or(4)
         } else {
             config.cpu_workers
@@ -233,7 +238,7 @@ impl Pool {
         // Create failure detector
         let failure_detector = Arc::new(FailureDetector::new());
 
-        Ok(Self {
+        Self {
             config,
             scheduler,
             executors: Arc::new(executors),
@@ -243,13 +248,17 @@ impl Pool {
             tasks_failed: AtomicU64::new(0),
             total_retries: AtomicU64::new(0),
             running: AtomicBool::new(true),
-        })
+        }
     }
 
     /// Submit a task for execution.
     ///
     /// The task is queued in the scheduler and executed by the
     /// appropriate backend based on task requirements.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn submit(&self, task: Task) -> Result<ExecutionResult> {
         if !self.running.load(Ordering::Acquire) {
             return Err(KernelError::DeviceNotReady);
@@ -292,7 +301,7 @@ impl Pool {
                 Err(e) => {
                     // Check if retriable error
                     if e.is_retriable() && retry_state.should_retry(&self.config.retry_policy) {
-                        retry_state.record_failure(format!("{}", e));
+                        retry_state.record_failure(format!("{e}"));
                         self.total_retries.fetch_add(1, Ordering::Relaxed);
                         current_task.increment_retry();
 
@@ -311,6 +320,10 @@ impl Pool {
     }
 
     /// Submit a task and get back a task ID (non-blocking).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn submit_async(&self, task: Task) -> Result<TaskId> {
         if !self.running.load(Ordering::Acquire) {
             return Err(KernelError::DeviceNotReady);

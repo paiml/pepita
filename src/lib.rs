@@ -146,7 +146,7 @@ pub mod constants {
     /// Sector size in bytes (standard block device sector)
     pub const SECTOR_SIZE: u32 = 512;
 
-    /// Page size in bytes (standard x86_64/aarch64)
+    /// Page size in bytes (standard `x86_64/aarch64`)
     pub const PAGE_SIZE: usize = 4096;
 
     /// Maximum queue depth for ublk devices

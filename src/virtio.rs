@@ -1,6 +1,6 @@
 //! Virtio: Virtual I/O Devices
 //!
-//! Pure Rust virtio device implementations for MicroVM communication.
+//! Pure Rust virtio device implementations for `MicroVM` communication.
 //! Supports virtio-vsock (socket), virtio-blk (block device).
 //!
 //! ## Example
@@ -276,6 +276,10 @@ impl VirtQueue {
     }
 
     /// Add descriptor index to pending
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn add_pending(&self, desc_idx: u16) -> Result<()> {
         let mut pending = self.pending.lock().map_err(|_| KernelError::ResourceBusy)?;
         pending.push(desc_idx);
@@ -283,6 +287,10 @@ impl VirtQueue {
     }
 
     /// Pop pending descriptor
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn pop_pending(&self) -> Result<Option<u16>> {
         let mut pending = self.pending.lock().map_err(|_| KernelError::ResourceBusy)?;
         Ok(pending.pop())
@@ -294,6 +302,10 @@ impl VirtQueue {
     }
 
     /// Notify queue (signal device)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn notify(&self) -> Result<()> {
         if !self.is_ready() {
             return Err(KernelError::DeviceNotReady);
@@ -303,6 +315,10 @@ impl VirtQueue {
     }
 
     /// Mark descriptor as used
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn mark_used(&self, _desc_idx: u16, _len: u32) -> Result<()> {
         self.last_used_idx.fetch_add(1, Ordering::AcqRel);
         Ok(())
@@ -543,6 +559,7 @@ impl VsockConnection {
 
     /// Get available receive buffer space
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn available_credit(&self) -> u32 {
         self.buf_alloc.saturating_sub(self.rx_buffer.len() as u32)
     }
@@ -631,6 +648,10 @@ impl VirtioVsock {
     }
 
     /// Connect to a remote address
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn connect(&self, remote: VsockAddr) -> Result<()> {
         if !self.is_ready() {
             return Err(KernelError::DeviceNotReady);
@@ -654,15 +675,23 @@ impl VirtioVsock {
     }
 
     /// Send data (mock)
-    pub fn send(&self, _remote: VsockAddr, _data: &[u8]) -> Result<usize> {
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
+    pub fn send(&self, _remote: VsockAddr, data: &[u8]) -> Result<usize> {
         if !self.is_ready() {
             return Err(KernelError::DeviceNotReady);
         }
         // Mock: just return data length
-        Ok(_data.len())
+        Ok(data.len())
     }
 
     /// Receive data (mock)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn recv(&self, _remote: VsockAddr, _buffer: &mut [u8]) -> Result<usize> {
         if !self.is_ready() {
             return Err(KernelError::DeviceNotReady);
@@ -679,7 +708,7 @@ impl std::fmt::Debug for VirtioVsock {
             .field("cid", &self.cid)
             .field("ready", &self.is_ready())
             .field("connections", &self.connection_count())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -706,12 +735,11 @@ pub enum BlockRequestType {
 impl From<u32> for BlockRequestType {
     fn from(value: u32) -> Self {
         match value {
-            0 => Self::In,
             1 => Self::Out,
             4 => Self::Flush,
             11 => Self::Discard,
             13 => Self::WriteZeroes,
-            _ => Self::In, // Default
+            _ => Self::In, // Default (including 0)
         }
     }
 }
@@ -809,6 +837,8 @@ pub struct VirtioBlock {
 #[cfg(feature = "std")]
 impl VirtioBlock {
     /// Create a new block device
+    #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn new(config: BlockConfig) -> Self {
         let storage_size = (config.capacity * 512) as usize;
         Self {
@@ -868,6 +898,11 @@ impl VirtioBlock {
     }
 
     /// Read sectors
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn read(&self, sector: u64, buffer: &mut [u8]) -> Result<usize> {
         if !self.is_ready() {
             return Err(KernelError::DeviceNotReady);
@@ -889,6 +924,11 @@ impl VirtioBlock {
     }
 
     /// Write sectors
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn write(&self, sector: u64, data: &[u8]) -> Result<usize> {
         if !self.is_ready() {
             return Err(KernelError::DeviceNotReady);
@@ -917,6 +957,10 @@ impl VirtioBlock {
     }
 
     /// Flush (no-op for in-memory)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn flush(&self) -> Result<()> {
         if !self.is_ready() {
             return Err(KernelError::DeviceNotReady);

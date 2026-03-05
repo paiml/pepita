@@ -119,6 +119,10 @@ impl<T> WorkStealingDeque<T> {
     /// Push a task to the back (local operation, LIFO).
     ///
     /// Returns `Err` if the deque is at capacity.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn push(&self, item: T) -> Result<()> {
         let mut deque = self.deque.lock().map_err(|_| KernelError::WouldBlock)?;
         if deque.len() >= self.capacity {
@@ -153,10 +157,7 @@ impl<T> WorkStealingDeque<T> {
     ///
     /// Returns a vector of stolen tasks.
     pub fn steal_half(&self) -> Vec<T> {
-        let mut deque = match self.deque.lock() {
-            Ok(d) => d,
-            Err(_) => return Vec::new(),
-        };
+        let Ok(mut deque) = self.deque.lock() else { return Vec::new(); };
         let steal_count = deque.len() / 2;
         if steal_count == 0 {
             return Vec::new();
@@ -360,10 +361,7 @@ impl<T> Scheduler<T> {
     ///
     /// * `thief_id` - ID of the stealing worker
     pub fn steal_batch(&self, thief_id: WorkerId) -> Vec<T> {
-        let workers = match self.workers.read() {
-            Ok(w) => w,
-            Err(_) => return Vec::new(),
-        };
+        let Ok(workers) = self.workers.read() else { return Vec::new(); };
 
         let thief_idx = thief_id.as_u32() as usize;
         if workers.len() <= 1 || thief_idx >= workers.len() {
@@ -399,20 +397,14 @@ impl<T> Scheduler<T> {
     /// Get the total number of pending tasks across all workers.
     #[must_use]
     pub fn pending_tasks(&self) -> usize {
-        let workers = match self.workers.read() {
-            Ok(w) => w,
-            Err(_) => return 0,
-        };
+        let Ok(workers) = self.workers.read() else { return 0; };
         workers.iter().map(|w| w.deque.len()).sum()
     }
 
     /// Get load statistics for each worker.
     #[must_use]
     pub fn worker_loads(&self) -> Vec<usize> {
-        let workers = match self.workers.read() {
-            Ok(w) => w,
-            Err(_) => return Vec::new(),
-        };
+        let Ok(workers) = self.workers.read() else { return Vec::new(); };
         workers.iter().map(|w| w.deque.len()).collect()
     }
 
@@ -430,6 +422,7 @@ impl<T> Scheduler<T> {
     /// Add a new worker dynamically.
     ///
     /// Returns the new worker's ID.
+    #[allow(clippy::cast_possible_truncation)]
     pub fn add_worker(&self) -> Option<WorkerId> {
         let mut workers = self.workers.write().ok()?;
         let id = workers.len() as u32;
@@ -444,10 +437,7 @@ impl<T> Scheduler<T> {
     ///
     /// * `worker_id` - ID of the worker to deactivate
     pub fn deactivate_worker(&self, worker_id: WorkerId) -> bool {
-        let workers = match self.workers.read() {
-            Ok(w) => w,
-            Err(_) => return false,
-        };
+        let Ok(workers) = self.workers.read() else { return false; };
         let idx = worker_id.as_u32() as usize;
         if idx >= workers.len() {
             return false;
@@ -459,10 +449,7 @@ impl<T> Scheduler<T> {
     /// Check if a worker is active.
     #[must_use]
     pub fn is_worker_active(&self, worker_id: WorkerId) -> bool {
-        let workers = match self.workers.read() {
-            Ok(w) => w,
-            Err(_) => return false,
-        };
+        let Ok(workers) = self.workers.read() else { return false; };
         let idx = worker_id.as_u32() as usize;
         if idx >= workers.len() {
             return false;

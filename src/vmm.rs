@@ -138,6 +138,10 @@ impl VmConfig {
     }
 
     /// Validate configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn validate(&self) -> Result<()> {
         if self.vcpus == 0 || self.vcpus > MAX_VCPUS {
             return Err(KernelError::InvalidArgument);
@@ -218,6 +222,10 @@ impl VmConfigBuilder {
     }
 
     /// Build the configuration
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn build(self) -> Result<VmConfig> {
         self.config.validate()?;
         Ok(self.config)
@@ -228,7 +236,7 @@ impl VmConfigBuilder {
 // VCPU REGISTERS (x86_64)
 // ============================================================================
 
-/// x86_64 general-purpose registers
+/// `x86_64` general-purpose registers
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct VcpuRegs {
@@ -270,7 +278,7 @@ pub struct VcpuRegs {
     pub rflags: u64,
 }
 
-/// x86_64 segment register
+/// `x86_64` segment register
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct Segment {
@@ -302,7 +310,7 @@ pub struct Segment {
     pub padding: u8,
 }
 
-/// x86_64 descriptor table register
+/// `x86_64` descriptor table register
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct Dtable {
@@ -314,7 +322,7 @@ pub struct Dtable {
     pub padding: [u16; 3],
 }
 
-/// x86_64 special registers
+/// `x86_64` special registers
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct VcpuSregs {
@@ -482,6 +490,10 @@ pub struct Vcpu {
 #[cfg(feature = "std")]
 impl Vcpu {
     /// Create a new vCPU (mock implementation)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn new(id: u32) -> Result<Self> {
         Ok(Self {
             id,
@@ -503,26 +515,46 @@ impl Vcpu {
     }
 
     /// Get registers (mock)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn get_regs(&self) -> Result<VcpuRegs> {
         Ok(VcpuRegs::default())
     }
 
     /// Set registers (mock)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn set_regs(&self, _regs: &VcpuRegs) -> Result<()> {
         Ok(())
     }
 
     /// Get special registers (mock)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn get_sregs(&self) -> Result<VcpuSregs> {
         Ok(VcpuSregs::default())
     }
 
     /// Set special registers (mock)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn set_sregs(&self, _sregs: &VcpuSregs) -> Result<()> {
         Ok(())
     }
 
     /// Run vCPU (mock - returns immediately)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn run(&self) -> Result<ExitReason> {
         self.running.store(true, Ordering::Release);
         // Mock: return Halt immediately
@@ -537,7 +569,7 @@ impl std::fmt::Debug for Vcpu {
         f.debug_struct("Vcpu")
             .field("id", &self.id)
             .field("running", &self.is_running())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -545,7 +577,7 @@ impl std::fmt::Debug for Vcpu {
 // MICROVM (std only)
 // ============================================================================
 
-/// Lightweight MicroVM
+/// Lightweight `MicroVM`
 #[cfg(feature = "std")]
 pub struct MicroVm {
     /// Configuration
@@ -564,7 +596,15 @@ pub struct MicroVm {
 
 #[cfg(feature = "std")]
 impl MicroVm {
-    /// Create a new MicroVM
+    /// Create a new `MicroVM`
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
+    ///
+    /// # Panics
+    ///
+    /// Panics if internal invariants are violated.
     pub fn create(config: VmConfig) -> Result<Self> {
         config.validate()?;
 
@@ -585,6 +625,10 @@ impl MicroVm {
     }
 
     /// Get VM state
+    ///
+    /// # Panics
+    ///
+    /// Panics if the internal lock is poisoned.
     pub fn state(&self) -> VmState {
         *self.state.read().unwrap()
     }
@@ -608,6 +652,10 @@ impl MicroVm {
     }
 
     /// Add memory region
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn add_memory_region(&mut self, region: MemoryRegion) -> Result<()> {
         if self.regions.len() >= MAX_MEMORY_SLOTS as usize {
             return Err(KernelError::OutOfMemory);
@@ -617,6 +665,10 @@ impl MicroVm {
     }
 
     /// Run the VM (mock - runs briefly)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn run(&self) -> Result<ExitReason> {
         {
             let mut state = self.state.write().map_err(|_| KernelError::ResourceBusy)?;
@@ -644,6 +696,10 @@ impl MicroVm {
     }
 
     /// Pause the VM
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn pause(&self) -> Result<()> {
         let mut state = self.state.write().map_err(|_| KernelError::ResourceBusy)?;
         if *state != VmState::Running {
@@ -654,6 +710,10 @@ impl MicroVm {
     }
 
     /// Resume the VM
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn resume(&self) -> Result<()> {
         let mut state = self.state.write().map_err(|_| KernelError::ResourceBusy)?;
         if *state != VmState::Paused {
@@ -664,6 +724,10 @@ impl MicroVm {
     }
 
     /// Stop the VM
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn stop(&self) -> Result<()> {
         let mut state = self.state.write().map_err(|_| KernelError::ResourceBusy)?;
         *state = VmState::Stopped;
@@ -684,7 +748,7 @@ impl std::fmt::Debug for MicroVm {
             .field("vcpus", &self.vcpu_count())
             .field("memory_mb", &self.config.memory_mb)
             .field("state", &self.state())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -774,6 +838,10 @@ impl Jailer {
     }
 
     /// Enter jail (mock - just marks as active)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn enter(&self) -> Result<()> {
         // In a real implementation, this would:
         // 1. chroot to chroot_dir
@@ -785,6 +853,10 @@ impl Jailer {
     }
 
     /// Exit jail (mock)
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn exit(&self) -> Result<()> {
         self.active.store(false, Ordering::Release);
         Ok(())

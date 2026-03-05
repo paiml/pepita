@@ -29,7 +29,7 @@
 // CONSTANTS
 // ============================================================================
 
-/// Page size in bytes (4 KiB for x86_64/aarch64)
+/// Page size in bytes (4 KiB for `x86_64/aarch64`)
 pub const PAGE_SIZE: usize = 4096;
 
 /// Page shift (log2 of page size)
@@ -95,6 +95,7 @@ impl PhysAddr {
 
     /// Get the offset within a page.
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub const fn page_offset(&self) -> usize {
         (self.0 & (PAGE_SIZE as u64 - 1)) as usize
     }
@@ -185,6 +186,7 @@ impl VirtAddr {
 
     /// Get the offset within a page.
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub const fn page_offset(&self) -> usize {
         (self.0 & (PAGE_SIZE as u64 - 1)) as usize
     }
@@ -342,7 +344,7 @@ impl DmaBuffer {
     /// Get the number of pages covered by this buffer.
     #[must_use]
     pub const fn page_count(&self) -> usize {
-        (self.size + PAGE_SIZE - 1) / PAGE_SIZE
+        self.size.div_ceil(PAGE_SIZE)
     }
 }
 

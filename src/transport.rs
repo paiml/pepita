@@ -1,7 +1,7 @@
 //! Message transport for distributed task execution.
 //!
 //! This module provides message types and transport abstractions
-//! inspired by ZeroMQ patterns (REQ/REP, PUSH/PULL, PUB/SUB).
+//! inspired by `ZeroMQ` patterns (REQ/REP, PUSH/PULL, PUB/SUB).
 //!
 //! ## Protocol
 //!
@@ -108,6 +108,7 @@ pub struct HeartbeatPayload {
 impl HeartbeatPayload {
     /// Create a new heartbeat payload.
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn new(worker_id: u32) -> Self {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -157,6 +158,10 @@ impl HeartbeatPayload {
     }
 
     /// Deserialize from bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() < 18 {
             return Err(KernelError::InvalidRequest);
@@ -198,6 +203,7 @@ pub struct TaskResultPayload {
 impl TaskResultPayload {
     /// Create a new result payload.
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn new(task_id: TaskId, state: TaskState, duration: Duration) -> Self {
         Self {
             task_id: task_id.as_u64(),
@@ -224,6 +230,7 @@ impl TaskResultPayload {
 
     /// Serialize to bytes.
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
 
@@ -242,15 +249,12 @@ impl TaskResultPayload {
         });
 
         // Exit code (5 bytes: 1 present flag + 4 value)
-        match self.exit_code {
-            Some(code) => {
-                bytes.push(1);
-                bytes.extend_from_slice(&code.to_be_bytes());
-            }
-            None => {
-                bytes.push(0);
-                bytes.extend_from_slice(&[0u8; 4]);
-            }
+        if let Some(code) = self.exit_code {
+            bytes.push(1);
+            bytes.extend_from_slice(&code.to_be_bytes());
+        } else {
+            bytes.push(0);
+            bytes.extend_from_slice(&[0u8; 4]);
         }
 
         // Duration (8 bytes)
@@ -272,6 +276,10 @@ impl TaskResultPayload {
     }
 
     /// Deserialize from bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() < 22 {
             return Err(KernelError::InvalidRequest);
@@ -362,6 +370,7 @@ impl RegisterPayload {
 
     /// Serialize to bytes.
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
 
@@ -388,6 +397,10 @@ impl RegisterPayload {
     }
 
     /// Deserialize from bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() < 9 {
             return Err(KernelError::InvalidRequest);
@@ -451,19 +464,19 @@ impl Message {
 
     /// Create a heartbeat message with full payload.
     #[must_use]
-    pub fn heartbeat_full(payload: HeartbeatPayload) -> Self {
+    pub fn heartbeat_full(payload: &HeartbeatPayload) -> Self {
         Self::new(MessageType::Heartbeat, payload.to_bytes())
     }
 
     /// Create a task result message.
     #[must_use]
-    pub fn task_result(payload: TaskResultPayload) -> Self {
+    pub fn task_result(payload: &TaskResultPayload) -> Self {
         Self::new(MessageType::TaskResult, payload.to_bytes())
     }
 
     /// Create a register message.
     #[must_use]
-    pub fn register(payload: RegisterPayload) -> Self {
+    pub fn register(payload: &RegisterPayload) -> Self {
         Self::new(MessageType::Register, payload.to_bytes())
     }
 
@@ -507,6 +520,10 @@ impl Message {
     }
 
     /// Get heartbeat payload (if applicable).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn as_heartbeat(&self) -> Result<HeartbeatPayload> {
         if self.msg_type != MessageType::Heartbeat {
             return Err(KernelError::InvalidRequest);
@@ -515,6 +532,10 @@ impl Message {
     }
 
     /// Get task result payload (if applicable).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn as_task_result(&self) -> Result<TaskResultPayload> {
         if self.msg_type != MessageType::TaskResult {
             return Err(KernelError::InvalidRequest);
@@ -523,6 +544,10 @@ impl Message {
     }
 
     /// Get register payload (if applicable).
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn as_register(&self) -> Result<RegisterPayload> {
         if self.msg_type != MessageType::Register {
             return Err(KernelError::InvalidRequest);
@@ -543,6 +568,7 @@ impl Message {
     ///
     /// Format: [length: 4 bytes] [type: 1 byte] [payload: N bytes]
     #[must_use]
+    #[allow(clippy::cast_possible_truncation)]
     pub fn to_bytes(&self) -> Vec<u8> {
         let payload_len = self.payload.len() as u32;
         let total_len = 1 + payload_len; // type + payload
@@ -556,6 +582,10 @@ impl Message {
     }
 
     /// Deserialize message from bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the operation fails.
     pub fn from_bytes(bytes: &[u8]) -> Result<Self> {
         if bytes.len() < 5 {
             return Err(KernelError::InvalidRequest);
@@ -836,7 +866,7 @@ mod tests {
     #[test]
     fn test_message_register() {
         let payload = RegisterPayload::new(1, Backend::Cpu, 8).with_name("test-worker");
-        let msg = Message::register(payload.clone());
+        let msg = Message::register(&payload);
 
         assert_eq!(msg.message_type(), MessageType::Register);
 
@@ -853,7 +883,7 @@ mod tests {
             TaskState::Completed,
             Duration::from_secs(10),
         );
-        let msg = Message::task_result(payload.clone());
+        let msg = Message::task_result(&payload);
 
         assert_eq!(msg.message_type(), MessageType::TaskResult);
 
