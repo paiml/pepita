@@ -450,9 +450,7 @@ mod tests {
         let pool = Pool::builder().cpu_workers(4).build().unwrap();
 
         for i in 0..10 {
-            let task = Task::binary("echo")
-                .args(vec![format!("Task {}", i)])
-                .build();
+            let task = Task::binary("echo").args(vec![format!("Task {}", i)]).build();
             let result = pool.submit(task).unwrap();
             assert!(result.is_success());
         }

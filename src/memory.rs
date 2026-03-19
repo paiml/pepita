@@ -319,12 +319,7 @@ impl DmaBuffer {
     /// Create a new DMA buffer descriptor.
     #[must_use]
     pub const fn new(phys: PhysAddr, virt: VirtAddr, size: usize, direction: DmaDirection) -> Self {
-        Self {
-            phys,
-            virt,
-            size,
-            direction,
-        }
+        Self { phys, virt, size, direction }
     }
 
     /// Check if the buffer is valid.
@@ -543,14 +538,8 @@ mod tests {
 
     #[test]
     fn test_phys_addr_align_down() {
-        assert_eq!(
-            PhysAddr::new(0x1234).page_align_down(),
-            PhysAddr::new(0x1000)
-        );
-        assert_eq!(
-            PhysAddr::new(0x1000).page_align_down(),
-            PhysAddr::new(0x1000)
-        );
+        assert_eq!(PhysAddr::new(0x1234).page_align_down(), PhysAddr::new(0x1000));
+        assert_eq!(PhysAddr::new(0x1000).page_align_down(), PhysAddr::new(0x1000));
     }
 
     #[test]
