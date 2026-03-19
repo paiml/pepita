@@ -1,3 +1,7 @@
+// Kernel interface library — unsafe operations and lock unwraps are expected
+#![allow(unsafe_op_in_unsafe_fn)]
+#![allow(clippy::disallowed_methods)]
+
 //! # Pepita: Sovereign AI Distributed Computing Primitives
 //!
 //! Pepita provides minimal kernel interfaces and distributed computing primitives

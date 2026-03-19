@@ -336,19 +336,19 @@ impl FailureDetector {
 
     /// Register a worker.
     pub fn register_worker(&self, worker_id: WorkerId) {
-        let mut workers = self.workers.write().unwrap();
+        let mut workers = self.workers.write().expect("lock poisoned");
         workers.insert(worker_id, WorkerHealth::new(worker_id));
     }
 
     /// Deregister a worker.
     pub fn deregister_worker(&self, worker_id: WorkerId) {
-        let mut workers = self.workers.write().unwrap();
+        let mut workers = self.workers.write().expect("lock poisoned");
         workers.remove(&worker_id);
     }
 
     /// Record a heartbeat from a worker.
     pub fn record_heartbeat(&self, worker_id: WorkerId) {
-        let mut workers = self.workers.write().unwrap();
+        let mut workers = self.workers.write().expect("lock poisoned");
         if let Some(health) = workers.get_mut(&worker_id) {
             health.record_heartbeat();
         } else {
@@ -361,7 +361,7 @@ impl FailureDetector {
 
     /// Record task completion.
     pub fn record_task_result(&self, worker_id: WorkerId, success: bool) {
-        let mut workers = self.workers.write().unwrap();
+        let mut workers = self.workers.write().expect("lock poisoned");
         if let Some(health) = workers.get_mut(&worker_id) {
             health.record_task_completion(success);
         }
@@ -370,21 +370,21 @@ impl FailureDetector {
     /// Get worker health status.
     #[must_use]
     pub fn get_status(&self, worker_id: WorkerId) -> HealthStatus {
-        let workers = self.workers.read().unwrap();
+        let workers = self.workers.read().expect("lock poisoned");
         workers.get(&worker_id).map_or(HealthStatus::Unknown, |h| h.status)
     }
 
     /// Get worker health record.
     #[must_use]
     pub fn get_health(&self, worker_id: WorkerId) -> Option<WorkerHealth> {
-        let workers = self.workers.read().unwrap();
+        let workers = self.workers.read().expect("lock poisoned");
         workers.get(&worker_id).cloned()
     }
 
     /// Get all healthy workers.
     #[must_use]
     pub fn healthy_workers(&self) -> Vec<WorkerId> {
-        let workers = self.workers.read().unwrap();
+        let workers = self.workers.read().expect("lock poisoned");
         workers
             .iter()
             .filter(|(_, h)| h.status == HealthStatus::Healthy)
@@ -395,7 +395,7 @@ impl FailureDetector {
     /// Get all failed workers.
     #[must_use]
     pub fn failed_workers(&self) -> Vec<WorkerId> {
-        let workers = self.workers.read().unwrap();
+        let workers = self.workers.read().expect("lock poisoned");
         workers
             .iter()
             .filter(|(_, h)| h.status == HealthStatus::Failed)
@@ -405,7 +405,7 @@ impl FailureDetector {
 
     /// Update all worker statuses based on heartbeat timeouts.
     pub fn update_all_statuses(&self) {
-        let mut workers = self.workers.write().unwrap();
+        let mut workers = self.workers.write().expect("lock poisoned");
         for health in workers.values_mut() {
             health.update_status(self.heartbeat_timeout, self.failure_threshold);
         }
@@ -493,19 +493,19 @@ impl CircuitBreaker {
     /// Get current state.
     #[must_use]
     pub fn state(&self) -> CircuitState {
-        *self.state.read().unwrap()
+        *self.state.read().expect("lock poisoned")
     }
 
     /// Check if circuit allows execution.
     #[must_use]
     pub fn allows_execution(&self) -> bool {
-        let state = *self.state.read().unwrap();
+        let state = *self.state.read().expect("lock poisoned");
         match state {
             CircuitState::Closed => true,
             CircuitState::HalfOpen => true,
             CircuitState::Open => {
                 // Check if we should transition to half-open
-                let opened_at = self.opened_at.read().unwrap();
+                let opened_at = self.opened_at.read().expect("lock poisoned");
                 if let Some(opened) = *opened_at {
                     if opened.elapsed() >= self.reset_timeout {
                         drop(opened_at);
@@ -520,7 +520,7 @@ impl CircuitBreaker {
 
     /// Record a success.
     pub fn record_success(&self) {
-        let state = *self.state.read().unwrap();
+        let state = *self.state.read().expect("lock poisoned");
         match state {
             CircuitState::Closed => {
                 self.failure_count.store(0, Ordering::Release);
@@ -537,7 +537,7 @@ impl CircuitBreaker {
 
     /// Record a failure.
     pub fn record_failure(&self) {
-        let state = *self.state.read().unwrap();
+        let state = *self.state.read().expect("lock poisoned");
         match state {
             CircuitState::Closed => {
                 let count = self.failure_count.fetch_add(1, Ordering::AcqRel) + 1;
@@ -553,24 +553,24 @@ impl CircuitBreaker {
     }
 
     fn transition_to_open(&self) {
-        let mut state = self.state.write().unwrap();
+        let mut state = self.state.write().expect("lock poisoned");
         *state = CircuitState::Open;
-        let mut opened_at = self.opened_at.write().unwrap();
+        let mut opened_at = self.opened_at.write().expect("lock poisoned");
         *opened_at = Some(Instant::now());
         self.success_count.store(0, Ordering::Release);
     }
 
     fn transition_to_half_open(&self) {
-        let mut state = self.state.write().unwrap();
+        let mut state = self.state.write().expect("lock poisoned");
         *state = CircuitState::HalfOpen;
         self.success_count.store(0, Ordering::Release);
         self.failure_count.store(0, Ordering::Release);
     }
 
     fn transition_to_closed(&self) {
-        let mut state = self.state.write().unwrap();
+        let mut state = self.state.write().expect("lock poisoned");
         *state = CircuitState::Closed;
-        let mut opened_at = self.opened_at.write().unwrap();
+        let mut opened_at = self.opened_at.write().expect("lock poisoned");
         *opened_at = None;
         self.failure_count.store(0, Ordering::Release);
         self.success_count.store(0, Ordering::Release);

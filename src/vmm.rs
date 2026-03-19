@@ -42,20 +42,20 @@ pub const MAX_MEMORY_SLOTS: u32 = 32;
 // KVM ioctls (from linux/kvm.h) - for future KVM integration
 #[allow(dead_code)]
 mod kvm_ioctls {
-    pub const KVM_GET_API_VERSION: u64 = 0xAE00;
-    pub const KVM_CREATE_VM: u64 = 0xAE01;
-    pub const KVM_CHECK_EXTENSION: u64 = 0xAE03;
-    pub const KVM_GET_VCPU_MMAP_SIZE: u64 = 0xAE04;
-    pub const KVM_CREATE_VCPU: u64 = 0xAE41;
-    pub const KVM_SET_USER_MEMORY_REGION: u64 = 0x4020_AE46;
-    pub const KVM_RUN: u64 = 0xAE80;
-    pub const KVM_GET_REGS: u64 = 0x8090_AE81;
-    pub const KVM_SET_REGS: u64 = 0x4090_AE82;
-    pub const KVM_GET_SREGS: u64 = 0x8138_AE83;
-    pub const KVM_SET_SREGS: u64 = 0x4138_AE84;
-    pub const KVM_CAP_USER_MEMORY: u32 = 3;
-    pub const KVM_CAP_IRQCHIP: u32 = 0;
-    pub const KVM_CAP_HLT: u32 = 1;
+    pub(super) const KVM_GET_API_VERSION: u64 = 0xAE00;
+    pub(super) const KVM_CREATE_VM: u64 = 0xAE01;
+    pub(super) const KVM_CHECK_EXTENSION: u64 = 0xAE03;
+    pub(super) const KVM_GET_VCPU_MMAP_SIZE: u64 = 0xAE04;
+    pub(super) const KVM_CREATE_VCPU: u64 = 0xAE41;
+    pub(super) const KVM_SET_USER_MEMORY_REGION: u64 = 0x4020_AE46;
+    pub(super) const KVM_RUN: u64 = 0xAE80;
+    pub(super) const KVM_GET_REGS: u64 = 0x8090_AE81;
+    pub(super) const KVM_SET_REGS: u64 = 0x4090_AE82;
+    pub(super) const KVM_GET_SREGS: u64 = 0x8138_AE83;
+    pub(super) const KVM_SET_SREGS: u64 = 0x4138_AE84;
+    pub(super) const KVM_CAP_USER_MEMORY: u32 = 3;
+    pub(super) const KVM_CAP_IRQCHIP: u32 = 0;
+    pub(super) const KVM_CAP_HLT: u32 = 1;
 }
 
 // ============================================================================
@@ -577,7 +577,7 @@ impl MicroVm {
 
     /// Get VM state
     pub fn state(&self) -> VmState {
-        *self.state.read().unwrap()
+        *self.state.read().expect("lock poisoned")
     }
 
     /// Get configuration
@@ -859,7 +859,7 @@ mod tests {
 
     #[test]
     fn test_config_memory_bytes() {
-        let config = VmConfig::builder().memory_mb(256).build().unwrap();
+        let config = VmConfig::builder().memory_mb(256).build().expect("build failed");
         assert_eq!(config.memory_bytes(), 256 * 1024 * 1024);
     }
 
@@ -935,7 +935,7 @@ mod tests {
 
     #[test]
     fn test_microvm_create() {
-        let config = VmConfig::builder().vcpus(2).memory_mb(256).build().unwrap();
+        let config = VmConfig::builder().vcpus(2).memory_mb(256).build().expect("build failed");
 
         let vm = MicroVm::create(config).unwrap();
         assert_eq!(vm.vcpu_count(), 2);
@@ -945,7 +945,7 @@ mod tests {
 
     #[test]
     fn test_microvm_run() {
-        let config = VmConfig::builder().build().unwrap();
+        let config = VmConfig::builder().build().expect("build failed");
         let vm = MicroVm::create(config).unwrap();
 
         let exit = vm.run().unwrap();
@@ -956,7 +956,7 @@ mod tests {
 
     #[test]
     fn test_microvm_add_memory_region() {
-        let config = VmConfig::builder().build().unwrap();
+        let config = VmConfig::builder().build().expect("build failed");
         let mut vm = MicroVm::create(config).unwrap();
 
         let region = MemoryRegion::new(0, 0, 4096, 0x7f0000);
@@ -965,7 +965,7 @@ mod tests {
 
     #[test]
     fn test_microvm_pause_resume() {
-        let config = VmConfig::builder().build().unwrap();
+        let config = VmConfig::builder().build().expect("build failed");
         let vm = MicroVm::create(config).unwrap();
 
         // Can't pause when not running
@@ -979,7 +979,7 @@ mod tests {
 
     #[test]
     fn test_microvm_debug() {
-        let config = VmConfig::builder().vcpus(2).memory_mb(128).build().unwrap();
+        let config = VmConfig::builder().vcpus(2).memory_mb(128).build().expect("build failed");
         let vm = MicroVm::create(config).unwrap();
         let debug = format!("{:?}", vm);
         assert!(debug.contains("MicroVm"));

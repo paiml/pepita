@@ -63,13 +63,13 @@ fn print_struct_info() {
 /// Print important constants.
 fn print_constants() {
     println!("Kernel Constants:");
-    println!("  PAGE_SIZE:          {}", PAGE_SIZE);
-    println!("  BLK_MQ_MAX_DEPTH:   {}", BLK_MQ_MAX_DEPTH);
-    println!("  BLK_MQ_MAX_HW_QUEUES: {}", BLK_MQ_MAX_HW_QUEUES);
-    println!("  IORING_OP_NOP:      {}", IORING_OP_NOP);
-    println!("  IORING_OP_READ:     {}", IORING_OP_READ);
-    println!("  IORING_OP_URING_CMD: {}", IORING_OP_URING_CMD);
-    println!("  UBLK_U_CMD_ADD_DEV: 0x{:08x}", UBLK_U_CMD_ADD_DEV);
+    println!("  PAGE_SIZE:          {PAGE_SIZE}");
+    println!("  BLK_MQ_MAX_DEPTH:   {BLK_MQ_MAX_DEPTH}");
+    println!("  BLK_MQ_MAX_HW_QUEUES: {BLK_MQ_MAX_HW_QUEUES}");
+    println!("  IORING_OP_NOP:      {IORING_OP_NOP}");
+    println!("  IORING_OP_READ:     {IORING_OP_READ}");
+    println!("  IORING_OP_URING_CMD: {IORING_OP_URING_CMD}");
+    println!("  UBLK_U_CMD_ADD_DEV: 0x{UBLK_U_CMD_ADD_DEV:08x}");
     println!();
 }
 
@@ -116,7 +116,7 @@ fn verify_abi() {
     let config = TagSetConfig::new(4, 128);
     match config.validate() {
         Ok(()) => println!("  TagSetConfig: valid"),
-        Err(e) => println!("  TagSetConfig: invalid - {}", e),
+        Err(e) => println!("  TagSetConfig: invalid - {e}"),
     }
     println!();
 
