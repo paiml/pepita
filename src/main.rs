@@ -23,11 +23,26 @@ fn main() {
 /// Print struct size information.
 fn print_struct_info() {
     println!("Struct Sizes (ABI Verification):");
-    println!("  UblkCtrlCmd:  {} bytes (expected: 32)", size_of::<UblkCtrlCmd>());
-    println!("  UblkIoDesc:   {} bytes (expected: 24)", size_of::<UblkIoDesc>());
-    println!("  UblkIoCmd:    {} bytes (expected: 16)", size_of::<UblkIoCmd>());
-    println!("  IoUringSqe:   {} bytes (expected: 64)", size_of::<IoUringSqe>());
-    println!("  IoUringCqe:   {} bytes (expected: 16)", size_of::<IoUringCqe>());
+    println!(
+        "  UblkCtrlCmd:  {} bytes (expected: 32)",
+        size_of::<UblkCtrlCmd>()
+    );
+    println!(
+        "  UblkIoDesc:   {} bytes (expected: 24)",
+        size_of::<UblkIoDesc>()
+    );
+    println!(
+        "  UblkIoCmd:    {} bytes (expected: 16)",
+        size_of::<UblkIoCmd>()
+    );
+    println!(
+        "  IoUringSqe:   {} bytes (expected: 64)",
+        size_of::<IoUringSqe>()
+    );
+    println!(
+        "  IoUringCqe:   {} bytes (expected: 16)",
+        size_of::<IoUringCqe>()
+    );
     println!("  Request:      {} bytes", size_of::<Request>());
     println!("  PhysAddr:     {} bytes", size_of::<PhysAddr>());
     println!("  VirtAddr:     {} bytes", size_of::<VirtAddr>());
@@ -58,9 +73,18 @@ fn verify_abi() {
     let sqe_ok = size_of::<IoUringSqe>() == 64;
     let cqe_ok = size_of::<IoUringCqe>() == 16;
 
-    println!("  UblkCtrlCmd size: {}", if ublk_ctrl_ok { "OK" } else { "FAIL" });
-    println!("  UblkIoDesc size:  {}", if ublk_io_desc_ok { "OK" } else { "FAIL" });
-    println!("  UblkIoCmd size:   {}", if ublk_io_cmd_ok { "OK" } else { "FAIL" });
+    println!(
+        "  UblkCtrlCmd size: {}",
+        if ublk_ctrl_ok { "OK" } else { "FAIL" }
+    );
+    println!(
+        "  UblkIoDesc size:  {}",
+        if ublk_io_desc_ok { "OK" } else { "FAIL" }
+    );
+    println!(
+        "  UblkIoCmd size:   {}",
+        if ublk_io_cmd_ok { "OK" } else { "FAIL" }
+    );
     println!("  IoUringSqe size:  {}", if sqe_ok { "OK" } else { "FAIL" });
     println!("  IoUringCqe size:  {}", if cqe_ok { "OK" } else { "FAIL" });
     println!();
@@ -71,9 +95,18 @@ fn verify_abi() {
     let sqe_align_ok = align_of::<IoUringSqe>() == 8;
 
     println!("Alignment Verification:");
-    println!("  PhysAddr align:   {}", if phys_align_ok { "OK" } else { "FAIL" });
-    println!("  VirtAddr align:   {}", if virt_align_ok { "OK" } else { "FAIL" });
-    println!("  IoUringSqe align: {}", if sqe_align_ok { "OK" } else { "FAIL" });
+    println!(
+        "  PhysAddr align:   {}",
+        if phys_align_ok { "OK" } else { "FAIL" }
+    );
+    println!(
+        "  VirtAddr align:   {}",
+        if virt_align_ok { "OK" } else { "FAIL" }
+    );
+    println!(
+        "  IoUringSqe align: {}",
+        if sqe_align_ok { "OK" } else { "FAIL" }
+    );
     println!();
 
     // Test struct construction

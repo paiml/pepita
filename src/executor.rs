@@ -108,8 +108,9 @@ impl CpuExecutor {
     #[must_use]
     pub fn default_workers() -> Self {
         // Use available parallelism or default to 4
-        let num_workers =
-            std::thread::available_parallelism().map(std::num::NonZero::get).unwrap_or(4);
+        let num_workers = std::thread::available_parallelism()
+            .map(|p| p.get())
+            .unwrap_or(4);
         Self::new(num_workers)
     }
 
@@ -151,6 +152,34 @@ impl CpuExecutor {
         result
     }
 
+    fn build_result(
+        task_id: TaskId,
+        exit_code: Option<i32>,
+        stdout: Vec<u8>,
+        stderr: Vec<u8>,
+        duration: Duration,
+        success: bool,
+    ) -> ExecutionResult {
+        ExecutionResult {
+            task_id,
+            exit_code,
+            stdout,
+            stderr,
+            output_buffers: Vec::new(),
+            duration,
+            state: if success {
+                TaskState::Completed
+            } else {
+                TaskState::Failed
+            },
+            error: if success {
+                None
+            } else {
+                Some(format!("Exit code: {exit_code:?}"))
+            },
+        }
+    }
+
     fn run_binary_internal(
         &self,
         task: &BinaryTask,
@@ -161,25 +190,18 @@ impl CpuExecutor {
         let mut cmd = Command::new(&task.path);
         cmd.args(&task.args);
 
-        // Set environment variables
         for (key, value) in &task.env {
             cmd.env(key, value);
         }
-
-        // Set working directory if specified
         if let Some(ref dir) = task.working_dir {
             cmd.current_dir(dir);
         }
 
-        // Configure I/O
-        cmd.stdout(Stdio::piped());
-        cmd.stderr(Stdio::piped());
-
+        cmd.stdout(Stdio::piped()).stderr(Stdio::piped());
         if task.stdin.is_some() {
             cmd.stdin(Stdio::piped());
         }
 
-        // Spawn process
         let mut child = cmd.spawn().map_err(|e| {
             if e.kind() == io::ErrorKind::NotFound {
                 KernelError::UblkDeviceNotFound
@@ -188,7 +210,6 @@ impl CpuExecutor {
             }
         })?;
 
-        // Write stdin if provided
         if let Some(ref stdin_data) = task.stdin {
             if let Some(mut stdin) = child.stdin.take() {
                 use std::io::Write;
@@ -196,74 +217,55 @@ impl CpuExecutor {
             }
         }
 
-        // Wait for completion with optional timeout
         let output = if let Some(timeout_duration) = timeout.or(self.max_cpu_time) {
-            // Simple timeout implementation
             let deadline = start + timeout_duration;
             loop {
                 match child.try_wait() {
                     Ok(Some(status)) => {
-                        let output =
-                            child.wait_with_output().map_err(|_| KernelError::IoTimeout)?;
-                        let duration = start.elapsed();
+                        let out = child
+                            .wait_with_output()
+                            .map_err(|_| KernelError::IoTimeout)?;
+                        return Ok(Self::build_result(
+                            task_id,
+                            status.code(),
+                            out.stdout,
+                            out.stderr,
+                            start.elapsed(),
+                            status.success(),
+                        ));
+                    }
+                    Ok(None) if Instant::now() > deadline => {
+                        let _ = child.kill();
                         return Ok(ExecutionResult {
                             task_id,
-                            exit_code: status.code(),
-                            stdout: output.stdout,
-                            stderr: output.stderr,
+                            exit_code: None,
+                            stdout: Vec::new(),
+                            stderr: Vec::new(),
                             output_buffers: Vec::new(),
-                            duration,
-                            state: if status.success() {
-                                TaskState::Completed
-                            } else {
-                                TaskState::Failed
-                            },
-                            error: if status.success() {
-                                None
-                            } else {
-                                Some(format!("Exit code: {:?}", status.code()))
-                            },
+                            duration: start.elapsed(),
+                            state: TaskState::TimedOut,
+                            error: Some("Task timed out".to_string()),
                         });
                     }
-                    Ok(None) => {
-                        if Instant::now() > deadline {
-                            let _ = child.kill();
-                            return Ok(ExecutionResult {
-                                task_id,
-                                exit_code: None,
-                                stdout: Vec::new(),
-                                stderr: Vec::new(),
-                                output_buffers: Vec::new(),
-                                duration: start.elapsed(),
-                                state: TaskState::TimedOut,
-                                error: Some("Task timed out".to_string()),
-                            });
-                        }
-                        std::thread::sleep(Duration::from_millis(10));
-                    }
-                    Err(_) => {
-                        return Err(KernelError::IoTimeout);
-                    }
+                    Ok(None) => std::thread::sleep(Duration::from_millis(10)),
+                    Err(_) => return Err(KernelError::IoTimeout),
                 }
             }
         } else {
-            child.wait_with_output().map_err(|_| KernelError::IoTimeout)?
+            child
+                .wait_with_output()
+                .map_err(|_| KernelError::IoTimeout)?
         };
 
-        let duration = start.elapsed();
-        let exit_code = output.status.code();
         let success = output.status.success();
-
-        Ok(ExecutionResult {
+        Ok(Self::build_result(
             task_id,
-            exit_code,
-            stdout: output.stdout,
-            stderr: output.stderr,
-            output_buffers: Vec::new(),
-            duration,
-            state: if success { TaskState::Completed } else { TaskState::Failed },
-            error: if success { None } else { Some(format!("Exit code: {exit_code:?}")) },
-        })
+            output.status.code(),
+            output.stdout,
+            output.stderr,
+            start.elapsed(),
+            success,
+        ))
     }
 }
 
@@ -316,7 +318,7 @@ impl Executor for CpuExecutor {
                             output_buffers: Vec::new(),
                             duration: start.elapsed(),
                             state: TaskState::Failed,
-                            error: Some(format!("Pipeline stage {idx} failed")),
+                            error: Some(format!("Pipeline stage {} failed", idx)),
                         });
                     }
 
@@ -435,7 +437,10 @@ impl RemoteExecutor {
     /// Create a new remote executor.
     #[must_use]
     pub fn new() -> Self {
-        Self { workers: Vec::new(), connected: AtomicBool::new(false) }
+        Self {
+            workers: Vec::new(),
+            connected: AtomicBool::new(false),
+        }
     }
 
     /// Add a remote worker.
@@ -499,7 +504,9 @@ impl ExecutorRegistry {
     /// Create a new empty registry.
     #[must_use]
     pub fn new() -> Self {
-        Self { executors: Vec::new() }
+        Self {
+            executors: Vec::new(),
+        }
     }
 
     /// Register an executor.
@@ -535,7 +542,9 @@ impl ExecutorRegistry {
 
 impl std::fmt::Debug for ExecutorRegistry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ExecutorRegistry").field("num_executors", &self.executors.len()).finish()
+        f.debug_struct("ExecutorRegistry")
+            .field("num_executors", &self.executors.len())
+            .finish()
     }
 }
 
@@ -626,7 +635,10 @@ mod tests {
     #[test]
     fn test_cpu_executor_execute_echo() {
         let executor = CpuExecutor::new(4);
-        let task = Task::binary("echo").args(vec!["Hello, World!"]).backend(Backend::Cpu).build();
+        let task = Task::binary("echo")
+            .args(vec!["Hello, World!"])
+            .backend(Backend::Cpu)
+            .build();
 
         let result = executor.execute_sync(&task).unwrap();
         assert!(result.is_success());
@@ -636,7 +648,9 @@ mod tests {
     #[test]
     fn test_cpu_executor_execute_not_found() {
         let executor = CpuExecutor::new(4);
-        let task = Task::binary("/nonexistent/binary").backend(Backend::Cpu).build();
+        let task = Task::binary("/nonexistent/binary")
+            .backend(Backend::Cpu)
+            .build();
 
         let result = executor.execute_sync(&task);
         assert!(result.is_err());
@@ -645,8 +659,10 @@ mod tests {
     #[test]
     fn test_cpu_executor_execute_with_args() {
         let executor = CpuExecutor::new(4);
-        let task =
-            Task::binary("printf").args(vec!["%s %s", "foo", "bar"]).backend(Backend::Cpu).build();
+        let task = Task::binary("printf")
+            .args(vec!["%s %s", "foo", "bar"])
+            .backend(Backend::Cpu)
+            .build();
 
         let result = executor.execute_sync(&task).unwrap();
         assert!(result.is_success());
@@ -776,7 +792,10 @@ mod tests {
         let mut registry = ExecutorRegistry::new();
         registry.register(Arc::new(CpuExecutor::new(4)));
 
-        let task = Task::binary("echo").args(vec!["test"]).backend(Backend::Cpu).build();
+        let task = Task::binary("echo")
+            .args(vec!["test"])
+            .backend(Backend::Cpu)
+            .build();
 
         let result = registry.execute(&task).unwrap();
         assert!(result.is_success());

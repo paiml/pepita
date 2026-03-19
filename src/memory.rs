@@ -29,7 +29,7 @@
 // CONSTANTS
 // ============================================================================
 
-/// Page size in bytes (4 KiB for `x86_64/aarch64`)
+/// Page size in bytes (4 KiB for x86_64/aarch64)
 pub const PAGE_SIZE: usize = 4096;
 
 /// Page shift (log2 of page size)
@@ -319,7 +319,12 @@ impl DmaBuffer {
     /// Create a new DMA buffer descriptor.
     #[must_use]
     pub const fn new(phys: PhysAddr, virt: VirtAddr, size: usize, direction: DmaDirection) -> Self {
-        Self { phys, virt, size, direction }
+        Self {
+            phys,
+            virt,
+            size,
+            direction,
+        }
     }
 
     /// Check if the buffer is valid.
@@ -337,7 +342,7 @@ impl DmaBuffer {
     /// Get the number of pages covered by this buffer.
     #[must_use]
     pub const fn page_count(&self) -> usize {
-        self.size.div_ceil(PAGE_SIZE)
+        (self.size + PAGE_SIZE - 1) / PAGE_SIZE
     }
 }
 
@@ -538,8 +543,14 @@ mod tests {
 
     #[test]
     fn test_phys_addr_align_down() {
-        assert_eq!(PhysAddr::new(0x1234).page_align_down(), PhysAddr::new(0x1000));
-        assert_eq!(PhysAddr::new(0x1000).page_align_down(), PhysAddr::new(0x1000));
+        assert_eq!(
+            PhysAddr::new(0x1234).page_align_down(),
+            PhysAddr::new(0x1000)
+        );
+        assert_eq!(
+            PhysAddr::new(0x1000).page_align_down(),
+            PhysAddr::new(0x1000)
+        );
     }
 
     #[test]

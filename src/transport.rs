@@ -276,7 +276,9 @@ impl TaskResultPayload {
         };
 
         let exit_code = if bytes[9] == 1 {
-            Some(i32::from_be_bytes([bytes[10], bytes[11], bytes[12], bytes[13]]))
+            Some(i32::from_be_bytes([
+                bytes[10], bytes[11], bytes[12], bytes[13],
+            ]))
         } else {
             None
         };
@@ -453,7 +455,10 @@ impl Message {
     /// Create a task cancel message.
     #[must_use]
     pub fn task_cancel(task_id: TaskId) -> Self {
-        Self::new(MessageType::TaskCancel, task_id.as_u64().to_be_bytes().to_vec())
+        Self::new(
+            MessageType::TaskCancel,
+            task_id.as_u64().to_be_bytes().to_vec(),
+        )
     }
 
     /// Get the message type.

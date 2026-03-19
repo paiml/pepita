@@ -228,7 +228,7 @@ impl VmConfigBuilder {
 // VCPU REGISTERS (x86_64)
 // ============================================================================
 
-/// `x86_64` general-purpose registers
+/// x86_64 general-purpose registers
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct VcpuRegs {
@@ -270,7 +270,7 @@ pub struct VcpuRegs {
     pub rflags: u64,
 }
 
-/// `x86_64` segment register
+/// x86_64 segment register
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct Segment {
@@ -302,7 +302,7 @@ pub struct Segment {
     pub padding: u8,
 }
 
-/// `x86_64` descriptor table register
+/// x86_64 descriptor table register
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct Dtable {
@@ -314,7 +314,7 @@ pub struct Dtable {
     pub padding: [u16; 3],
 }
 
-/// `x86_64` special registers
+/// x86_64 special registers
 #[derive(Debug, Clone, Copy, Default)]
 #[repr(C)]
 pub struct VcpuSregs {
@@ -446,7 +446,13 @@ impl MemoryRegion {
         memory_size: u64,
         userspace_addr: u64,
     ) -> Self {
-        Self { slot, guest_phys_addr, memory_size, userspace_addr, flags: 0 }
+        Self {
+            slot,
+            guest_phys_addr,
+            memory_size,
+            userspace_addr,
+            flags: 0,
+        }
     }
 
     /// Set readonly flag
@@ -528,7 +534,10 @@ impl Vcpu {
 #[cfg(feature = "std")]
 impl std::fmt::Debug for Vcpu {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Vcpu").field("id", &self.id).field("running", &self.is_running()).finish()
+        f.debug_struct("Vcpu")
+            .field("id", &self.id)
+            .field("running", &self.is_running())
+            .finish()
     }
 }
 
@@ -536,7 +545,7 @@ impl std::fmt::Debug for Vcpu {
 // MICROVM (std only)
 // ============================================================================
 
-/// Lightweight `MicroVM`
+/// Lightweight MicroVM
 #[cfg(feature = "std")]
 pub struct MicroVm {
     /// Configuration
@@ -555,7 +564,7 @@ pub struct MicroVm {
 
 #[cfg(feature = "std")]
 impl MicroVm {
-    /// Create a new `MicroVM`
+    /// Create a new MicroVM
     pub fn create(config: VmConfig) -> Result<Self> {
         config.validate()?;
 
@@ -618,7 +627,11 @@ impl MicroVm {
         }
 
         // Mock: run first vCPU
-        let exit = if let Some(vcpu) = self.vcpus.first() { vcpu.run()? } else { ExitReason::Halt };
+        let exit = if let Some(vcpu) = self.vcpus.first() {
+            vcpu.run()?
+        } else {
+            ExitReason::Halt
+        };
 
         self.exit_count.fetch_add(1, Ordering::Relaxed);
 
@@ -742,7 +755,10 @@ impl Jailer {
     /// Create a new jailer
     #[must_use]
     pub fn new(config: JailerConfig) -> Self {
-        Self { config, active: AtomicBool::new(false) }
+        Self {
+            config,
+            active: AtomicBool::new(false),
+        }
     }
 
     /// Get configuration
