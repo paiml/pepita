@@ -1,3 +1,4 @@
+#![allow(clippy::borrow_as_ptr)]
 //! Smoke tests for basic functionality
 
 #[test]

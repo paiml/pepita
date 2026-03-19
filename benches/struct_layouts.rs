@@ -1,3 +1,4 @@
+#![allow(clippy::borrow_as_ptr)]
 //! Struct layout benchmarks for Pepita kernel interfaces.
 //!
 //! These benchmarks verify that struct operations are zero-cost abstractions
@@ -24,7 +25,7 @@ fn bench_struct_construction(c: &mut Criterion) {
 
     group.bench_function("UblkIoDesc::new", |b| {
         b.iter(|| {
-            let desc = UblkIoDesc::new(black_box(0), black_box(1), black_box(0), black_box(8));
+            let desc = UblkIoDesc::new(black_box(0), black_box(1), black_box(8));
             black_box(desc)
         });
     });
@@ -40,8 +41,9 @@ fn bench_struct_construction(c: &mut Criterion) {
         b.iter(|| {
             let sqe = IoUringSqe::read(
                 black_box(3),
-                black_box(0x1000 as *mut u8),
+                black_box(0x1000),
                 black_box(4096),
+                black_box(0),
                 black_box(0),
             );
             black_box(sqe)
@@ -77,11 +79,11 @@ fn bench_address_operations(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("PhysAddr::to_pfn", |b| {
+    group.bench_function("PhysAddr::as_u64", |b| {
         let addr = PhysAddr::new(0x1000_0000);
         b.iter(|| {
-            let pfn = black_box(addr).to_pfn();
-            black_box(pfn)
+            let val = black_box(addr).as_u64();
+            black_box(val)
         });
     });
 
@@ -105,17 +107,9 @@ fn bench_dma_buffer(c: &mut Criterion) {
                 black_box(PhysAddr::new(0x1000_0000)),
                 black_box(VirtAddr::new(0xffff_8000_0000_0000)),
                 black_box(4096),
+                pepita::memory::DmaDirection::Bidirectional,
             );
             black_box(buf)
-        });
-    });
-
-    group.bench_function("DmaBuffer::contains", |b| {
-        let buf =
-            DmaBuffer::new(PhysAddr::new(0x1000_0000), VirtAddr::new(0xffff_8000_0000_0000), 4096);
-        b.iter(|| {
-            let contains = black_box(&buf).contains(black_box(PhysAddr::new(0x1000_0800)));
-            black_box(contains)
         });
     });
 

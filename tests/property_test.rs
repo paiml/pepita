@@ -1,3 +1,4 @@
+#![allow(clippy::borrow_as_ptr)]
 //! Property-based tests for invariants
 
 #[test]

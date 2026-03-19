@@ -1,6 +1,5 @@
-// Kernel interface library — unsafe operations and lock unwraps are expected
-#![allow(unsafe_op_in_unsafe_fn)]
-#![allow(clippy::disallowed_methods)]
+// Kernel interface library — these are expected in low-level code
+#![allow(unsafe_op_in_unsafe_fn, clippy::borrow_as_ptr)]
 
 //! # Pepita: Sovereign AI Distributed Computing Primitives
 //!
