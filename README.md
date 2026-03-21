@@ -1,4 +1,6 @@
 <p align="center">
+[![CI](https://github.com/paiml/pepita/actions/workflows/ci.yml/badge.svg)](https://github.com/paiml/pepita/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/pepita.svg)](https://crates.io/crates/pepita)
 
 # Pepita: Sovereign AI Kernel Interfaces
 
