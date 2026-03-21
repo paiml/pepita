@@ -1,0 +1,92 @@
+metadata:
+  version: "1.0.0"
+  author: "Sovereign AI Stack"
+  description: "Dispatch contract for operation routing to appropriate compute backends"
+  crate: "pepita"
+  references:
+    - "Li et al. (2020) PyTorch Distributed: Experiences on Accelerating Data Parallel Training"
+    - "Vasilache et al. (2018) Tensor Comprehensions: Framework-Agnostic High-Performance Machine Learning Abstractions"
+
+equations:
+  dispatch_select:
+    formula: "dispatch(op, backends) = backend_i where backend_i = argmax_{b in backends} priority(b, op)"
+    domain: "op in Operation, |backends| >= 1"
+    invariants:
+      - "Exactly one backend selected per operation"
+      - "Selected backend supports the operation type"
+      - "Falls back to CPU if no accelerator available"
+  dispatch_consistency:
+    formula: "dispatch(op, backends_1) == dispatch(op, backends_2) when backends_1 == backends_2"
+    domain: "Same operation and same available backends"
+    invariants:
+      - "Deterministic: same inputs produce same backend selection"
+  dispatch_latency:
+    formula: "latency(dispatch) << latency(kernel_execution)"
+    domain: "dispatch overhead"
+    invariants:
+      - "Dispatch overhead < 1% of kernel execution time"
+
+proof_obligations:
+  - type: invariant
+    property: "Exactly one backend selected"
+    formal: "|dispatch(op, backends)| == 1"
+    applies_to: all
+  - type: invariant
+    property: "Selected backend supports operation"
+    formal: "dispatch(op, backends).supports(op) == true"
+    applies_to: all
+  - type: invariant
+    property: "Deterministic dispatch"
+    formal: "dispatch(op, B) == dispatch(op, B) for identical inputs"
+    applies_to: all
+  - type: invariant
+    property: "CPU fallback always available"
+    formal: "backends contains CPU implies dispatch never fails"
+    applies_to: all
+
+falsification_tests:
+  - id: FALSIFY-DISP-001
+    rule: "Single backend selection"
+    test: "test_dispatch_single_selection"
+    prediction: "verified"
+    if_fails: "Dispatch returns multiple or zero backends"
+  - id: FALSIFY-DISP-002
+    rule: "Backend supports operation"
+    test: "test_dispatch_backend_supports_op"
+    prediction: "verified"
+    if_fails: "Operation dispatched to incompatible backend"
+  - id: FALSIFY-DISP-003
+    rule: "Deterministic selection"
+    test: "test_dispatch_deterministic"
+    prediction: "verified"
+    if_fails: "Non-deterministic backend selection"
+  - id: FALSIFY-DISP-004
+    rule: "CPU fallback"
+    test: "test_dispatch_cpu_fallback"
+    prediction: "verified"
+    if_fails: "Dispatch fails when only CPU available"
+
+kani_harnesses:
+  - id: KANI-DISP-001
+    obligation: PO-DISP-001
+    property: "Single selection"
+    bound: 8
+    strategy: bounded_int
+    harness: verify_single_dispatch
+  - id: KANI-DISP-002
+    obligation: PO-DISP-002
+    property: "Backend compatibility"
+    bound: 8
+    strategy: bounded_int
+    harness: verify_dispatch_compatibility
+
+qa_gate:
+  id: QA-DISPATCH
+  name: "dispatch contract"
+  min_coverage: 0.90
+  max_complexity: 20
+  required_tests:
+    - test_dispatch_single_selection
+    - test_dispatch_backend_supports_op
+    - test_dispatch_deterministic
+    - test_dispatch_cpu_fallback

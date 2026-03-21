@@ -1,0 +1,84 @@
+metadata:
+  version: "1.0.0"
+  author: "Sovereign AI Stack"
+  description: "Kernel scheduling contract for compute kernel lifecycle and resource management"
+  crate: "pepita"
+  references:
+    - "Nickolls et al. (2008) Scalable Parallel Programming with CUDA"
+    - "Jia et al. (2019) Beyond Data and Model Parallelism for Deep Neural Networks"
+
+equations:
+  kernel_launch:
+    formula: "launch(kernel, grid, block) -> Result<KernelHandle>"
+    domain: "grid.x * grid.y * grid.z >= 1, block.x * block.y * block.z <= max_threads_per_block"
+    invariants:
+      - "Total threads = grid_dim * block_dim"
+      - "Block size does not exceed hardware limit"
+      - "Kernel handle is unique per launch"
+  kernel_occupancy:
+    formula: "occupancy = active_warps / max_warps_per_sm"
+    domain: "active_warps >= 0, max_warps_per_sm > 0"
+    invariants:
+      - "0 <= occupancy <= 1.0"
+      - "Higher occupancy with smaller block sizes (register-limited)"
+  kernel_completion:
+    formula: "await(handle) -> Result<Duration>"
+    domain: "handle is valid KernelHandle"
+    invariants:
+      - "Completed kernel releases all allocated resources"
+      - "Duration >= 0"
+
+proof_obligations:
+  - type: bound
+    property: "Block size within hardware limit"
+    formal: "block.x * block.y * block.z <= MAX_THREADS_PER_BLOCK"
+    applies_to: all
+  - type: bound
+    property: "Occupancy in [0, 1]"
+    formal: "0 <= occupancy <= 1.0"
+    applies_to: all
+  - type: invariant
+    property: "Resource cleanup on completion"
+    formal: "await(handle).is_ok() implies allocated_resources(handle) == 0"
+    applies_to: all
+
+falsification_tests:
+  - id: FALSIFY-KERN-001
+    rule: "Block size limit"
+    test: "test_kernel_block_size_limit"
+    prediction: "verified"
+    if_fails: "Launch accepts oversized blocks"
+  - id: FALSIFY-KERN-002
+    rule: "Occupancy bounded"
+    test: "test_kernel_occupancy_bounds"
+    prediction: "verified"
+    if_fails: "Occupancy calculation exceeds 1.0"
+  - id: FALSIFY-KERN-003
+    rule: "Resource cleanup"
+    test: "test_kernel_resource_cleanup"
+    prediction: "verified"
+    if_fails: "Memory leak after kernel completion"
+
+kani_harnesses:
+  - id: KANI-KERN-001
+    obligation: PO-KERN-001
+    property: "Block size bound"
+    bound: 8
+    strategy: bounded_int
+    harness: verify_block_size_bound
+  - id: KANI-KERN-002
+    obligation: PO-KERN-002
+    property: "Occupancy range"
+    bound: 8
+    strategy: bounded_int
+    harness: verify_occupancy_range
+
+qa_gate:
+  id: QA-KERNEL
+  name: "kernel scheduling contract"
+  min_coverage: 0.90
+  max_complexity: 20
+  required_tests:
+    - test_kernel_block_size_limit
+    - test_kernel_occupancy_bounds
+    - test_kernel_resource_cleanup

@@ -1,0 +1,92 @@
+metadata:
+  version: "1.0.0"
+  author: "Sovereign AI Stack"
+  description: "Matrix multiplication contract for compute kernel correctness"
+  crate: "pepita"
+  references:
+    - "Goto & Van De Geijn (2008) Anatomy of High-Performance Matrix Multiplication"
+    - "Huang et al. (2020) Strassen's Algorithm Reloaded on GPUs"
+
+equations:
+  matmul_definition:
+    formula: "C[i,j] = Sum_{k=0}^{K-1} A[i,k] * B[k,j]"
+    domain: "A in R^{M x K}, B in R^{K x N}, C in R^{M x N}"
+    invariants:
+      - "Inner dimensions must match: A.cols == B.rows"
+      - "Output shape is (A.rows, B.cols)"
+  matmul_associativity:
+    formula: "(A * B) * C == A * (B * C) within floating-point tolerance"
+    domain: "Compatible dimensions for chained multiplication"
+    invariants:
+      - "Associativity holds within epsilon for finite values"
+  matmul_identity:
+    formula: "A * I == A and I * A == A"
+    domain: "I is identity matrix of compatible dimension"
+    invariants:
+      - "Identity multiplication preserves input exactly"
+
+proof_obligations:
+  - type: invariant
+    property: "Dimension compatibility check"
+    formal: "A.cols != B.rows implies matmul(A, B) returns Err"
+    applies_to: all
+  - type: invariant
+    property: "Output shape correctness"
+    formal: "matmul(A, B).shape == (A.rows, B.cols)"
+    applies_to: all
+  - type: equivalence
+    property: "SIMD matches naive"
+    formal: "|matmul_simd(A, B) - matmul_naive(A, B)| < epsilon * K"
+    tolerance: 1.0e-5
+    applies_to: simd
+  - type: invariant
+    property: "Identity preservation"
+    formal: "|matmul(A, I) - A| < epsilon"
+    applies_to: all
+
+falsification_tests:
+  - id: FALSIFY-MM-001
+    rule: "Dimension mismatch rejected"
+    test: "test_matmul_dimension_mismatch"
+    prediction: "verified"
+    if_fails: "Matmul accepts incompatible dimensions"
+  - id: FALSIFY-MM-002
+    rule: "Output shape correct"
+    test: "test_matmul_output_shape"
+    prediction: "verified"
+    if_fails: "Output has wrong dimensions"
+  - id: FALSIFY-MM-003
+    rule: "SIMD parity with naive"
+    test: "test_matmul_simd_parity"
+    prediction: "verified"
+    if_fails: "SIMD implementation diverges from reference"
+  - id: FALSIFY-MM-004
+    rule: "Identity multiplication"
+    test: "test_matmul_identity"
+    prediction: "verified"
+    if_fails: "Identity matrix changes output"
+
+kani_harnesses:
+  - id: KANI-MM-001
+    obligation: PO-MM-001
+    property: "Dimension check"
+    bound: 8
+    strategy: bounded_int
+    harness: verify_dimension_check
+  - id: KANI-MM-002
+    obligation: PO-MM-002
+    property: "Output shape"
+    bound: 8
+    strategy: bounded_int
+    harness: verify_output_shape
+
+qa_gate:
+  id: QA-MATMUL
+  name: "matmul contract"
+  min_coverage: 0.90
+  max_complexity: 20
+  required_tests:
+    - test_matmul_dimension_mismatch
+    - test_matmul_output_shape
+    - test_matmul_simd_parity
+    - test_matmul_identity
