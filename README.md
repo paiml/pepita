@@ -1,6 +1,7 @@
 <p align="center">
 [![CI](https://github.com/paiml/pepita/actions/workflows/ci.yml/badge.svg)](https://github.com/paiml/pepita/actions/workflows/ci.yml)
 [![Crates.io](https://img.shields.io/crates/v/pepita.svg)](https://crates.io/crates/pepita)
+[![Documentation](https://docs.rs/pepita/badge.svg)](https://docs.rs/pepita)
 
 # Pepita: Sovereign AI Kernel Interfaces
 
@@ -317,6 +318,10 @@ Contributions are welcome! Please see the [CONTRIBUTING.md](CONTRIBUTING.md) gui
 ## MSRV
 
 Minimum Supported Rust Version: **1.75**
+
+## See Also
+
+- [Cookbook](https://github.com/paiml/sovereign-ai-cookbook)
 
 ## License
 
