@@ -23,7 +23,7 @@
 
 **Pepita** is a pure Rust library providing minimal kernel interfaces and distributed computing primitives for Sovereign AI workloads. It combines low-level Linux kernel interfaces (`ublk`, `io_uring`, `blk-mq`) with high-level infrastructure (`scheduler`, `executor`, `vmm`, `simd`, `gpu`).
 
-## Design Principles (Iron Lotus Framework)
+## Features
 
 - **First-Principles Rust**: Zero external dependencies in kernel mode
 - **Pure Rust Sovereignty**: 100% auditable, zero C/C++ dependencies
