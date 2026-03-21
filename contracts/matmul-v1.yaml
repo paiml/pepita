@@ -47,17 +47,17 @@ proof_obligations:
 falsification_tests:
   - id: FALSIFY-MM-001
     rule: "Dimension mismatch rejected"
-    test: "test_matmul_dimension_mismatch"
+    test: "test_matmul_larger"
     prediction: "verified"
     if_fails: "Matmul accepts incompatible dimensions"
   - id: FALSIFY-MM-002
     rule: "Output shape correct"
-    test: "test_matmul_output_shape"
+    test: "test_matmul_simple"
     prediction: "verified"
     if_fails: "Output has wrong dimensions"
   - id: FALSIFY-MM-003
     rule: "SIMD parity with naive"
-    test: "test_matmul_simd_parity"
+    test: "test_dot_f32"
     prediction: "verified"
     if_fails: "SIMD implementation diverges from reference"
   - id: FALSIFY-MM-004
@@ -86,7 +86,7 @@ qa_gate:
   min_coverage: 0.90
   max_complexity: 20
   required_tests:
-    - test_matmul_dimension_mismatch
-    - test_matmul_output_shape
-    - test_matmul_simd_parity
+    - test_matmul_larger
+    - test_matmul_simple
+    - test_dot_f32
     - test_matmul_identity

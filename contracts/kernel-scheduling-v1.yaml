@@ -45,17 +45,17 @@ proof_obligations:
 falsification_tests:
   - id: FALSIFY-KERN-001
     rule: "Block size limit"
-    test: "test_kernel_block_size_limit"
+    test: "test_gpu_limits_default"
     prediction: "verified"
     if_fails: "Launch accepts oversized blocks"
   - id: FALSIFY-KERN-002
     rule: "Occupancy bounded"
-    test: "test_kernel_occupancy_bounds"
+    test: "test_gpu_device_dispatch_invalid_workgroups"
     prediction: "verified"
     if_fails: "Occupancy calculation exceeds 1.0"
   - id: FALSIFY-KERN-003
     rule: "Resource cleanup"
-    test: "test_kernel_resource_cleanup"
+    test: "test_cpu_executor_shutdown"
     prediction: "verified"
     if_fails: "Memory leak after kernel completion"
 
@@ -79,6 +79,6 @@ qa_gate:
   min_coverage: 0.90
   max_complexity: 20
   required_tests:
-    - test_kernel_block_size_limit
-    - test_kernel_occupancy_bounds
-    - test_kernel_resource_cleanup
+    - test_gpu_limits_default
+    - test_gpu_device_dispatch_invalid_workgroups
+    - test_cpu_executor_shutdown

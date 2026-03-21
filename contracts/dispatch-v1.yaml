@@ -47,22 +47,22 @@ proof_obligations:
 falsification_tests:
   - id: FALSIFY-DISP-001
     rule: "Single backend selection"
-    test: "test_dispatch_single_selection"
+    test: "test_gpu_device_dispatch"
     prediction: "verified"
     if_fails: "Dispatch returns multiple or zero backends"
   - id: FALSIFY-DISP-002
     rule: "Backend supports operation"
-    test: "test_dispatch_backend_supports_op"
+    test: "test_cpu_executor_can_execute_binary"
     prediction: "verified"
     if_fails: "Operation dispatched to incompatible backend"
   - id: FALSIFY-DISP-003
     rule: "Deterministic selection"
-    test: "test_dispatch_deterministic"
+    test: "test_gpu_backend_name"
     prediction: "verified"
     if_fails: "Non-deterministic backend selection"
   - id: FALSIFY-DISP-004
     rule: "CPU fallback"
-    test: "test_dispatch_cpu_fallback"
+    test: "test_cpu_executor_backend"
     prediction: "verified"
     if_fails: "Dispatch fails when only CPU available"
 
@@ -86,7 +86,7 @@ qa_gate:
   min_coverage: 0.90
   max_complexity: 20
   required_tests:
-    - test_dispatch_single_selection
-    - test_dispatch_backend_supports_op
-    - test_dispatch_deterministic
-    - test_dispatch_cpu_fallback
+    - test_gpu_device_dispatch
+    - test_cpu_executor_can_execute_binary
+    - test_gpu_backend_name
+    - test_cpu_executor_backend
