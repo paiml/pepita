@@ -12,6 +12,7 @@ rust-version = "1.75"
 [workspace.dependencies]
 
 [package]
+exclude = ["tests/", "benches/", "docs/", ".github/", "book/", ".pmat/"]
 name = "pepita"
 version = "0.1.0"
 edition = "2021"
