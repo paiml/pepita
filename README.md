@@ -4,6 +4,8 @@
 
 # Pepita: Sovereign AI Kernel Interfaces
 
+**Tiny first-principles Rust kernel for bare-metal AI inference on embedded and edge devices.**
+
 </p>
 
 [![Rust](https://img.shields.io/badge/rust-100%25-orange.svg)](https://www.rust-lang.org/)
