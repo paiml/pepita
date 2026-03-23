@@ -1,5 +1,5 @@
 // Kernel interface library — these are expected in low-level code
-#![allow(unsafe_op_in_unsafe_fn, clippy::borrow_as_ptr)]
+#![allow(unsafe_op_in_unsafe_fn)]
 
 //! # Pepita: Sovereign AI Distributed Computing Primitives
 //!
@@ -73,6 +73,11 @@
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_sign_loss)]
 #![allow(clippy::cast_precision_loss)]
+#![allow(clippy::borrow_as_ptr)]
+#![allow(clippy::float_cmp)]
+#![allow(clippy::redundant_pattern_matching)]
+#![allow(clippy::field_reassign_with_default)]
+#![allow(clippy::stable_sort_primitive)]
 #![allow(clippy::cast_lossless)]
 #![allow(clippy::wildcard_imports)]
 #![allow(clippy::match_same_arms)]

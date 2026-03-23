@@ -5,7 +5,5 @@
 cognitive-complexity-threshold = 25
 
 # Banned methods (Cloudflare-class defect prevention)
-disallowed-methods = [
-    { path = "std::option::Option::unwrap", reason = "Use .expect() or ? operator" },
-    { path = "std::result::Result::unwrap", reason = "Use .expect() or ? operator" },
-]
+# Note: disallowed-methods removed — unwrap_used/expect_used at workspace level
+disallowed-methods = []
