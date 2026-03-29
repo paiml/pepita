@@ -47,6 +47,10 @@ proptest = ["dep:proptest"]
 # proptest is optional for property testing
 proptest = { version = "1.5", optional = true }
 
+[build-dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_yaml_ng = "0.10"
+
 [dev-dependencies]
 # Testing (EXTREME TDD)
 criterion = { version = "0.5", features = ["html_reports"] }
