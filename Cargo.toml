@@ -72,7 +72,6 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 float_cmp = "allow"
 redundant_pattern_matching = "allow"
-needless_sort = "allow"
 field_reassign_with_default = "allow"
 
 [lints]
