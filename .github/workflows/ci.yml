@@ -26,6 +26,10 @@ jobs:
     uses: paiml/.github/.github/workflows/sovereign-ci.yml@main
     with:
       repo: ${{ github.event.repository.name }}
+      # Build-performance standard (build-performance.md §7): nextest test
+      # runner + sccache compile cache, matching the fleet reference (copia).
+      enable_sccache: true
+      use_nextest: true
     secrets: inherit
 
   # Top-level alias so the org ruleset's required literal `gate` context is
