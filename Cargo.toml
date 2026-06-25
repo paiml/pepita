@@ -34,6 +34,13 @@ name = "pepita"
 path = "src/main.rs"
 required-features = ["std"]
 
+# Uses the `scheduler` module, which is `#[cfg(feature = "std")]`-gated.
+# Excluded from `--no-default-features` (no_std) builds.
+[[example]]
+name = "scheduler_demo"
+path = "examples/scheduler_demo.rs"
+required-features = ["std"]
+
 [features]
 default = ["std"]
 std = []

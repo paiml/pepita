@@ -341,6 +341,11 @@ mod tests {
     // Display Tests
     // ------------------------------------------------------------------------
 
+    // `format!` requires the alloc/std prelude, which is unavailable under
+    // `--no-default-features` (no_std). The `Display` impl itself is
+    // `core::fmt`-based and works in both modes; this test only exercises it
+    // where the heap-allocating `format!` macro is in scope.
+    #[cfg(feature = "std")]
     #[test]
     fn test_display_not_empty() {
         let errors = [
@@ -420,5 +425,49 @@ mod tests {
     fn test_error_equality() {
         assert_eq!(KernelError::OutOfMemory, KernelError::OutOfMemory);
         assert_ne!(KernelError::OutOfMemory, KernelError::InvalidAddress);
+    }
+
+    // no_std-friendly Display test: exercises the same `core::fmt`-based
+    // `Display` impl as `test_display_not_empty` but without the heap-allocating
+    // `format!` macro, so the path stays covered under `--no-default-features`.
+    #[test]
+    fn test_display_writes_human_readable() {
+        use core::fmt::Write;
+
+        /// Fixed-capacity writer so we can render `Display` with no allocator.
+        struct Buf {
+            data: [u8; 128],
+            len: usize,
+        }
+
+        impl Write for Buf {
+            fn write_str(&mut self, s: &str) -> core::fmt::Result {
+                let bytes = s.as_bytes();
+                let end = self.len + bytes.len();
+                if end > self.data.len() {
+                    return Err(core::fmt::Error);
+                }
+                self.data[self.len..end].copy_from_slice(bytes);
+                self.len = end;
+                Ok(())
+            }
+        }
+
+        let errors = [
+            KernelError::OutOfMemory,
+            KernelError::InvalidAddress,
+            KernelError::IoTimeout,
+            KernelError::UblkQueueFull,
+            KernelError::IoUringSubmitFull,
+            KernelError::BlockError,
+        ];
+
+        for error in errors {
+            let mut buf = Buf { data: [0; 128], len: 0 };
+            write!(buf, "{error}").expect("display fits in buffer");
+            let display = core::str::from_utf8(&buf.data[..buf.len]).expect("valid utf8");
+            assert!(!display.is_empty(), "display for {error:?} is empty");
+            assert!(!display.contains("KernelError"), "display should be human-readable");
+        }
     }
 }
