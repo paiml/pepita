@@ -7,10 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-25
+
 ### Added
+- Foundational provable contract `io-uring-roundtrip-v1.yaml` covering the
+  io_uring SQE/CQE correlation invariant (`user_data` roundtrip), the
+  success/error partition of `res`, and fixed 64/16-byte ABI layout
+- Falsification tests `contract_io_uring_user_data_roundtrip` and
+  `contract_io_uring_result_partition` backing the new contract
 - Domain-specific Verus verification specs for kernel interfaces
 - Makefile targets for verification and quality gates
-- Fixed Cargo.toml duplicate key issue
+
+### Fixed
+- Cargo.toml duplicate key issue
 
 ## [0.1.0] - 2026-01-04
 
@@ -30,5 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Property-based testing for all kernel interfaces
 - MIT OR Apache-2.0 dual licensing
 
-[Unreleased]: https://github.com/paiml/pepita/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/paiml/pepita/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/paiml/pepita/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/paiml/pepita/releases/tag/v0.1.0
