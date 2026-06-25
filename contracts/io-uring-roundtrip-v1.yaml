@@ -1,0 +1,104 @@
+metadata:
+  version: "1.0.0"
+  author: "Sovereign AI Stack"
+  description: "io_uring submission/completion queue roundtrip and ABI-layout safety contract — the first-principles correlation invariant of the kernel data path"
+  crate: "pepita"
+  references:
+    - "Axboe (2019) Efficient IO with io_uring (kernel.dk/io_uring.pdf)"
+    - "Linux kernel include/uapi/linux/io_uring.h — struct io_uring_sqe / io_uring_cqe ABI"
+
+equations:
+  sqe_cqe_correlation:
+    formula: "complete(submit(sqe)).user_data == sqe.user_data"
+    domain: "sqe in IoUringSqe, kernel preserves the opaque user_data cookie verbatim"
+    invariants:
+      - "The kernel never mutates user_data; the CQE returns the exact cookie of its originating SQE"
+      - "user_data is the sole mechanism correlating a completion with its submission"
+  cqe_result_partition:
+    formula: "is_success(cqe) XOR is_error(cqe), partitioned at res >= 0"
+    domain: "cqe in IoUringCqe, res in i32"
+    invariants:
+      - "res >= 0 is success and res < 0 is error — the two predicates are mutually exclusive and total"
+      - "errno(cqe) == -res when res < 0, else 0"
+      - "result(cqe) == Some(res as u32) when res >= 0, else None"
+  abi_fixed_layout:
+    formula: "size_of(IoUringSqe) == 64 AND size_of(IoUringCqe) == 16"
+    domain: "repr(C) structs shared verbatim with the kernel across the syscall boundary"
+    invariants:
+      - "SQE is exactly 64 bytes and CQE is exactly 16 bytes — any drift corrupts the shared ring"
+      - "Field byte-offsets match the kernel uapi header exactly"
+
+proof_obligations:
+  - type: invariant
+    property: "user_data roundtrips unchanged from SQE to CQE"
+    formal: "for all u: cqe_for(sqe_with_user_data(u)).user_data == u"
+    applies_to: all
+  - type: invariant
+    property: "Success and error are a disjoint total partition of res"
+    formal: "is_success(cqe) != is_error(cqe)"
+    applies_to: all
+  - type: invariant
+    property: "errno is the negation of a negative res and zero otherwise"
+    formal: "(res < 0 implies errno == -res) and (res >= 0 implies errno == 0)"
+    applies_to: all
+  - type: bound
+    property: "SQE ABI size is exactly 64 bytes"
+    formal: "size_of(IoUringSqe) == 64"
+    applies_to: all
+  - type: bound
+    property: "CQE ABI size is exactly 16 bytes"
+    formal: "size_of(IoUringCqe) == 16"
+    applies_to: all
+
+falsification_tests:
+  - id: FALSIFY-URING-001
+    rule: "user_data roundtrips verbatim through SQE -> CQE"
+    test: "contract_io_uring_user_data_roundtrip"
+    prediction: "verified"
+    if_fails: "A completion is delivered with a user_data differing from its submission, breaking request correlation"
+  - id: FALSIFY-URING-002
+    rule: "Success and error partition res disjointly"
+    test: "contract_io_uring_result_partition"
+    prediction: "verified"
+    if_fails: "A CQE reports both success and error, or neither, for some res value"
+  - id: FALSIFY-URING-003
+    rule: "errno mirrors a negative res"
+    test: "test_cqe_error"
+    prediction: "verified"
+    if_fails: "errno() disagrees with -res on a failing completion"
+  - id: FALSIFY-URING-004
+    rule: "SQE ABI size is exactly 64 bytes"
+    test: "abi_io_uring_sqe_size"
+    prediction: "verified"
+    if_fails: "IoUringSqe size drifts from the 64-byte kernel ABI, corrupting the submission ring"
+  - id: FALSIFY-URING-005
+    rule: "CQE ABI size is exactly 16 bytes"
+    test: "abi_io_uring_cqe_size"
+    prediction: "verified"
+    if_fails: "IoUringCqe size drifts from the 16-byte kernel ABI, corrupting the completion ring"
+
+kani_harnesses:
+  - id: KANI-URING-001
+    obligation: PO-URING-001
+    property: "user_data roundtrip for all u64"
+    bound: 8
+    strategy: bounded_int
+    harness: verify_user_data_roundtrip
+  - id: KANI-URING-002
+    obligation: PO-URING-002
+    property: "Success/error partition for all i32 res"
+    bound: 8
+    strategy: bounded_int
+    harness: verify_result_partition
+
+qa_gate:
+  id: QA-IO-URING-ROUNDTRIP
+  name: "io_uring roundtrip contract"
+  min_coverage: 0.90
+  max_complexity: 20
+  required_tests:
+    - contract_io_uring_user_data_roundtrip
+    - contract_io_uring_result_partition
+    - test_cqe_error
+    - abi_io_uring_sqe_size
+    - abi_io_uring_cqe_size

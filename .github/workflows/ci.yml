@@ -26,5 +26,27 @@ jobs:
     uses: paiml/.github/.github/workflows/sovereign-ci.yml@main
     with:
       repo: ${{ github.event.repository.name }}
+      # Build-performance standard (build-performance.md §7): nextest test
+      # runner + sccache compile cache, matching the fleet reference (copia).
+      enable_sccache: true
+      use_nextest: true
     secrets: inherit
+
+  # Top-level alias so the org ruleset's required literal `gate` context is
+  # satisfied on PRs. sovereign-ci only produces `ci / gate`; the org ruleset
+  # (Green Main) requires a check named exactly `gate`. Without this, every
+  # pepita PR is BLOCKED (the `gate` job lived only in release.yml, which does
+  # not run on pull_request). See infra feedback_ci_gate_name.
+  gate:
+    runs-on: ubuntu-latest
+    needs: [ci]
+    if: always()
+    steps:
+      - name: Check required jobs
+        run: |
+          if [ "${{ needs.ci.result }}" != "success" ]; then
+            echo "ci failed: ${{ needs.ci.result }}"
+            exit 1
+          fi
+          echo "All required jobs passed"
 
