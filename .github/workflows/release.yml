@@ -102,13 +102,12 @@ jobs:
             --title "$GITHUB_REF_NAME" \
             --generate-notes
 
-  # ── Gate: unified CI must pass before publish ──────────
+  # ── Gate: sovereign CI must pass before publish ────────
   gate:
     needs: create-release
-    uses: paiml/.github/.github/workflows/unified-gate.yml@main
+    uses: paiml/.github/.github/workflows/sovereign-ci.yml@main
     with:
       repo: ${{ github.event.repository.name }}
-      pr_sha: ${{ github.sha }}
     secrets: inherit
 
   # ── Verify: package tarball integrity ──────────────────
