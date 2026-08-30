@@ -10,6 +10,24 @@ use pepita::{
     ublk::{UblkCtrlCmd, UblkIoCmd, UblkIoDesc, UBLK_U_CMD_ADD_DEV},
 };
 
+/// The usage text, as a string, so the same bytes can go to stdout for
+/// `--help` (where it is the requested output) and to stderr for a usage
+/// error (where stdout belongs to whatever the caller was redirecting).
+fn usage() -> String {
+    format!(
+        "pepita {} — Sovereign AI kernel interface verification\n\
+         \n\
+         Usage: pepita [OPTIONS]\n\
+         \n\
+         Options:\n\
+         \x20 -V, --version  Print version\n\
+         \x20 -h, --help     Print help\n\
+         \n\
+         Run without arguments to perform full ABI verification.",
+        env!("CARGO_PKG_VERSION")
+    )
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() > 1 {
@@ -19,21 +37,31 @@ fn main() {
                 return;
             }
             "--help" | "-h" => {
-                println!(
-                    "pepita {} — Sovereign AI kernel interface verification",
-                    env!("CARGO_PKG_VERSION")
-                );
-                println!();
-                println!("Usage: pepita [OPTIONS]");
-                println!();
-                println!("Options:");
-                println!("  -V, --version  Print version");
-                println!("  -h, --help     Print help");
-                println!();
-                println!("Run without arguments to perform full ABI verification.");
+                println!("{}", usage());
                 return;
             }
-            _ => {}
+            // ANYTHING ELSE IS A MISTAKE, AND IT HAS TO COST SOMETHING.
+            //
+            // This arm used to be `_ => {}`, falling through to the full ABI
+            // verification: `pepita zzz-notacommand` printed 999 bytes of a
+            // successful-looking report to stdout and exited 0. A typo in a
+            // script — `pepita --verify` for `pepita`, a stale flag, a
+            // subcommand from a version that does not exist yet — bought a
+            // green exit and a plausible report, so the script carried on as
+            // though the command it MEANT to run had run.
+            //
+            // Found by the nightly crux audit's C1 check
+            // (exit-nonzero-on-garbage): paiml/infra#396.
+            //
+            // The diagnostic goes to STDERR and the exit code is 2, the usual
+            // usage-error code, so `pepita > abi.txt` still writes only the
+            // report on the success path and writes nothing at all on this one.
+            other => {
+                eprintln!("pepita: unrecognised argument '{other}'");
+                eprintln!();
+                eprintln!("{}", usage());
+                std::process::exit(2);
+            }
         }
     }
 
