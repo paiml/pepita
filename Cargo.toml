@@ -56,7 +56,7 @@ proptest = { version = "1.5", optional = true }
 
 [build-dependencies]
 serde = { version = "1", features = ["derive"] }
-serde_yaml_ng = "0.10"
+serde_norway = "0.9"
 
 [dev-dependencies]
 # Testing (EXTREME TDD)
